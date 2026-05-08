@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grupo JAP — Gestão de Armazéns</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  /* TEMA CLARO (predefinido) */
+  --bg:#f0f4f8;--bg2:#ffffff;--bg3:#e8edf2;--border:#d1d9e0;--text:#1a202c;--text2:#4a5568;--text3:#718096;
+  --accent:#c53030;--accent2:#e53e3e;--card:#ffffff;--input:#f7fafc;--hover:#edf2f7;
+  --sim-bg:#c6f6d5;--sim-c:#276749;--nao-bg:#fed7d7;--nao-c:#742a2a;
+  --norte-bg:#bee3f8;--norte-c:#2a69ac;--centro-bg:#e9d8fd;--centro-c:#553c9a;--sul-bg:#c6f6d5;--sul-c:#276749;
+}
+body.dark{
+  --bg:#0f1117;--bg2:#1a1f35;--bg3:#0f1117;--border:#2d3748;--text:#e2e8f0;--text2:#a0aec0;--text3:#718096;
+  --accent:#e53e3e;--accent2:#fc8181;--card:#1a1f35;--input:#0f1117;--hover:#1e2535;
+  --sim-bg:#276749;--sim-c:#9ae6b4;--nao-bg:#742a2a;--nao-c:#feb2b2;
+  --norte-bg:#1a365d;--norte-c:#90cdf4;--centro-bg:#322659;--centro-c:#d6bcfa;--sul-bg:#276749;--sul-c:#9ae6b4;
+}
+*{margin:0;padding:0;box-sizing:border-box;transition:background-color .2s,color .2s,border-color .2s}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* HEADER */
+#header{background:var(--bg2);border-bottom:2px solid var(--accent);padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.logo-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background:var(--accent)}
+.logo svg{width:36px;height:36px}
+.header-text h1{font-size:15px;font-weight:800;color:var(--text)}
+.header-text p{font-size:11px;color:var(--text3)}
+.header-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+.tabs{display:flex;gap:5px;flex-wrap:wrap}
+.tab-btn{padding:7px 13px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:var(--bg3);color:var(--text2);transition:all .2s;border:1px solid var(--border)}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab-btn:hover:not(.active){background:var(--hover);color:var(--text)}
+.theme-btn{padding:7px 11px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:15px;transition:all .2s}
+.theme-btn:hover{background:var(--hover)}
+/* MAIN */
+#main{padding:18px;max-width:1600px;margin:0 auto}
+/* CARDS PV */
+.pv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:13px}
+.pv-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px;cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.pv-card:hover{border-color:var(--accent);box-shadow:0 4px 16px rgba(229,62,62,.15)}
+.pv-badge{background:var(--bg3);color:var(--text2);padding:2px 8px;border-radius:5px;font-size:12px;font-weight:800;border:1px solid var(--border)}
+.pv-zona{font-size:11px;color:var(--text3)}
+.pv-nome{font-size:14px;font-weight:700;color:var(--text);margin:7px 0 3px}
+.pv-emp{font-size:12px;color:var(--text3);margin-bottom:3px}
+.pv-local{font-size:12px;color:var(--text3);margin-bottom:7px}
+.marca-tag{background:var(--norte-bg);color:var(--norte-c);padding:1px 7px;border-radius:99px;font-size:11px;display:inline-block;margin:2px 2px 0 0}
+/* QUICK FILTER */
+.quick-bar{margin-bottom:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.quick-input{flex:1;max-width:420px;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:13px;outline:none}
+.quick-input:focus{border-color:var(--accent)}
+.count-badge{font-size:12px;color:var(--text3);background:var(--bg2);padding:4px 10px;border-radius:6px;border:1px solid var(--border)}
+/* SEARCH PANEL */
+.search-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.sp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;flex-wrap:wrap;gap:8px}
+.sp-title{font-size:14px;font-weight:700;color:var(--text)}
+.clear-btn{padding:6px 13px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:12px}
+.clear-btn:hover{background:var(--hover)}
+.filters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px}
+label.fl{font-size:11px;color:var(--text3);display:block;margin-bottom:3px;font-weight:600}
+.fi{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:13px;outline:none}
+.fi:focus{border-color:var(--accent)}
+/* RESULTS BAR */
+.results-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.results-count{font-size:13px;color:var(--text2)}
+.results-count strong{color:var(--accent)}
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:var(--bg3);color:var(--text3);font-weight:700;padding:10px 11px;text-align:left;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;white-space:nowrap;position:sticky;top:0}
+td{padding:9px 11px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr.data-row{cursor:pointer}
+tr.data-row:hover td{background:var(--hover)}
+/* BADGES */
+.yn-sim{background:var(--sim-bg);color:var(--sim-c);padding:1px 7px;border-radius:99px;font-size:11px;font-weight:700}
+.yn-nao{background:var(--nao-bg);color:var(--nao-c);padding:1px 7px;border-radius:99px;font-size:11px;font-weight:700}
+.yn-nd{background:var(--bg3);color:var(--text3);padding:1px 7px;border-radius:99px;font-size:11px}
+.zona-norte{background:var(--norte-bg);color:var(--norte-c);padding:1px 7px;border-radius:99px;font-size:11px;font-weight:700}
+.zona-centro{background:var(--centro-bg);color:var(--centro-c);padding:1px 7px;border-radius:99px;font-size:11px;font-weight:700}
+.zona-sul{background:var(--sul-bg);color:var(--sul-c);padding:1px 7px;border-radius:99px;font-size:11px;font-weight:700}
+.zona-outro{background:var(--bg3);color:var(--text3);padding:1px 7px;border-radius:99px;font-size:11px}
+/* MODAL */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto}
+#overlay.open{display:flex}
+#modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:820px;padding:24px;margin:auto;position:relative}
+.modal-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;gap:12px}
+.modal-pv-id{font-size:11px;color:var(--text3);font-weight:700;margin-bottom:2px}
+.modal-title{font-size:17px;font-weight:800;color:var(--text)}
+.modal-sub{font-size:13px;color:var(--text3);margin-top:2px}
+.modal-btns{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.close-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:13px;font-weight:600}
+.close-btn:hover{background:var(--hover)}
+.edit-btn{padding:7px 13px;border-radius:7px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:13px;font-weight:700}
+.edit-btn:hover{opacity:.85}
+.save-btn{padding:7px 13px;border-radius:7px;border:none;background:#276749;color:#9ae6b4;cursor:pointer;font-size:13px;font-weight:700}
+.save-btn:hover{opacity:.85}
+.cancel-edit-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:13px}
+.sec{margin-bottom:18px}
+.sec-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px}
+.field-label{font-size:11px;color:var(--text3);margin-bottom:2px;font-weight:600}
+.field-val{font-size:13px;color:var(--text);font-weight:500;word-break:break-word}
+.field-val.empty{color:var(--bg3)}
+/* EDIT FORM */
+.edit-input{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--input);color:var(--text);font-size:13px;outline:none}
+.edit-input:focus{border-color:var(--accent2);box-shadow:0 0 0 2px rgba(229,62,62,.2)}
+.edit-select{width:100%;padding:7px 10px;border-radius:6px;border:1px solid var(--accent);background:var(--input);color:var(--text);font-size:13px;outline:none}
+.edit-notice{background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--accent2);margin-bottom:14px}
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:65vh}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:38px;width:100%;max-width:360px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.login-logo{margin:0 auto 14px;width:60px;height:60px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center}
+.login-logo svg{width:48px;height:48px}
+.login-title{font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--text3);margin-bottom:22px;line-height:1.5}
+.pw-input{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:14px;outline:none;margin-bottom:11px}
+.pw-input:focus{border-color:var(--accent)}
+.login-btn{width:100%;padding:11px;border-radius:8px;border:none;cursor:pointer;font-weight:700;font-size:14px;background:var(--accent);color:#fff}
+.login-btn:hover{opacity:.88}
+.err-msg{background:var(--nao-bg);border:1px solid var(--accent);color:var(--accent2);padding:8px 12px;border-radius:6px;font-size:13px;margin-top:10px}
+/* BD TOOLBAR */
+.bd-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:13px;flex-wrap:wrap}
+.lock-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--accent2);cursor:pointer;font-size:12px;font-weight:700}
+.lock-btn:hover{background:var(--hover)}
+/* FOOTER */
+#footer{border-top:1px solid var(--border);padding:12px 20px;text-align:center;font-size:11px;color:var(--text3);background:var(--bg2);margin-top:30px}
+#footer a{color:var(--accent2);text-decoration:none}
+.email-link{color:var(--accent2);text-decoration:none;border-bottom:1px dashed var(--accent2)}
+.email-link:hover{opacity:.8}
+.imp-btn{padding:7px 13px;border-radius:7px;border:1px solid #276749;background:transparent;color:#9ae6b4;cursor:pointer;font-size:12px;font-weight:700}
+.imp-btn:hover{background:rgba(39,103,73,.2)}
+.exp-btn{padding:7px 13px;border-radius:7px;border:1px solid #2b6cb0;background:transparent;color:#90cdf4;cursor:pointer;font-size:12px;font-weight:700}
+.exp-btn:hover{background:rgba(43,108,176,.2)}
+.col-btn{padding:7px 13px;border-radius:7px;border:1px solid #744210;background:transparent;color:#c05621;cursor:pointer;font-size:12px;font-weight:700}
+.clr-bd-btn{padding:7px 10px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:12px}
+.clr-bd-btn:hover{background:var(--hover);color:var(--text)}
+.sync-btn{padding:7px 13px;border-radius:7px;border:1px solid #276749;background:rgba(39,103,73,.12);color:#276749;cursor:pointer;font-size:12px;font-weight:700}
+body.dark .sync-btn{color:#9ae6b4;border-color:#276749;background:rgba(39,103,73,.15)}
+.sync-btn:hover{background:rgba(39,103,73,.22)}
+.sync-btn.loading{opacity:.7;cursor:wait}
+.print-btn{padding:7px 13px;border-radius:7px;border:1px solid #2b6cb0;background:transparent;color:#2b6cb0;cursor:pointer;font-size:12px;font-weight:700}
+body.dark .print-btn{color:#90cdf4;border-color:#4299e1}
+.print-btn:hover{background:rgba(43,108,176,.1)}
+
+body.dark .col-btn{color:#f6ad55}
+.col-btn:hover{background:rgba(116,66,16,.12)}
+.feedback-btn{padding:7px 13px;border-radius:7px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-size:12px;font-weight:700}
+.feedback-btn:hover{background:rgba(197,48,48,.1)}
+#fb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px}
+#fb-overlay.open{display:flex}
+#fb-modal{background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;padding:24px}
+.fb-h{font-size:17px;font-weight:800;color:var(--text);margin-bottom:4px}
+.fb-sub{font-size:13px;color:var(--text3);margin-bottom:16px}
+.fb-label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:4px;margin-top:10px}
+.fb-select,.fb-input{width:100%;padding:8px 10px;border-radius:7px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:13px;outline:none;box-sizing:border-box}
+.fb-textarea{width:100%;padding:10px 12px;border-radius:7px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:13px;outline:none;resize:vertical;min-height:100px;font-family:inherit;box-sizing:border-box}
+.fb-select:focus,.fb-textarea:focus,.fb-input:focus{border-color:var(--accent)}
+.fb-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+.fb-send{padding:9px 20px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.fb-cancel{padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:13px;cursor:pointer}
+.detail-row td{background:var(--bg3)!important;padding:12px 20px!important}
+
+/* ── PESQUISA RESPONSIVE ─────────────────────────────────────────────────── */
+/* Base table styles */
+#pesquisa-table{width:100%;border-collapse:collapse}
+#pesquisa-table th{background:var(--bg3);color:var(--text3);font-weight:700;padding:10px 11px;text-align:left;border-bottom:2px solid var(--border);font-size:11px;text-transform:uppercase;white-space:nowrap}
+#pesquisa-table td{padding:9px 11px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;font-size:12px}
+#pesquisa-table tr.data-row{cursor:pointer}
+#pesquisa-table tr.data-row:hover td{background:var(--hover)}
+
+/* Desktop: show table, hide cards */
+@media(min-width:769px){
+  #pesquisa-mobile{display:none!important}
+  #pesquisa-desktop{display:block}
+  /* Desktop detail: 4 colunas largas, sem quebra de email */
+  .pv-mob-detail-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px 24px;
+  }
+}
+/* Tablet: 3 colunas */
+@media(min-width:600px) and (max-width:768px){
+  #pesquisa-desktop{display:none!important}
+  #pesquisa-mobile{display:block}
+  .pv-mob-detail-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px 18px;
+  }
+}
+/* Mobile/telemóvel: 2 colunas ou 1 conforme largura */
+@media(max-width:599px){
+  #pesquisa-desktop{display:none!important}
+  #pesquisa-mobile{display:block}
+  .pv-mob-detail-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px 12px;
+  }
+  /* Campos largos (emails, morada) ocupam linha inteira */
+  .pv-mob-field.wide{grid-column:1/-1}
+  #main{padding:10px}
+}
+/* Telefone muito estreito */
+@media(max-width:400px){
+  .pv-mob-detail-grid{grid-template-columns:1fr}
+  .pv-mob-field.wide{grid-column:1}
+}
+
+/* Mobile card styles */
+.pv-mob-card{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;transition:box-shadow .2s}
+.pv-mob-card:hover{box-shadow:0 3px 14px rgba(0,0,0,.12)}
+.pv-mob-header{padding:13px 15px;cursor:pointer;display:flex;align-items:flex-start;gap:10px;justify-content:space-between;-webkit-tap-highlight-color:transparent}
+.pv-mob-header:active{background:var(--hover)}
+.pv-mob-left{flex:1;min-width:0}
+.pv-mob-pv{font-size:11px;font-weight:800;color:var(--text3);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pv-mob-nome{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px;line-height:1.3}
+.pv-mob-emp{font-size:11px;color:var(--text3);margin-bottom:4px}
+.pv-mob-loc{font-size:11px;color:var(--text3);margin-bottom:5px}
+.pv-mob-arrow{font-size:16px;color:var(--text3);flex-shrink:0;padding-top:2px;transition:transform .25s;user-select:none}
+.pv-mob-arrow.open{transform:rotate(90deg);color:var(--accent)}
+.pv-mob-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.pv-mob-detail{display:none;padding:14px 15px;border-top:1px solid var(--border);background:var(--bg3)}
+.pv-mob-detail.open{display:block}
+
+/* Detail field — shared desktop+mobile */
+.pv-mob-field{min-width:0}
+.pv-mob-field .pml{font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;white-space:nowrap}
+.pv-mob-field .pmv{font-size:12px;color:var(--text);font-weight:500;word-break:break-word;overflow-wrap:anywhere}
+/* Section separators inside detail */
+.det-section{grid-column:1/-1;border-top:1px solid var(--border);margin:4px 0 6px;padding-top:6px;font-size:10px;font-weight:800;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.spo-btn{padding:7px 13px;border-radius:7px;border:1px solid #553c9a;background:transparent;color:#d6bcfa;cursor:pointer;font-size:12px;font-weight:700}
+.spo-btn:hover{background:rgba(85,60,154,.2)}
+/* SharePoint info panel */
+#spo-panel{display:none;background:var(--card);border:1px solid #553c9a;border-radius:12px;padding:18px;margin-bottom:16px}
+#spo-panel h3{font-size:14px;font-weight:800;color:var(--text);margin-bottom:10px}
+#spo-panel p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:8px}
+#spo-panel .spo-link{color:#d6bcfa;word-break:break-all;font-size:12px}
+#spo-panel .spo-steps{background:var(--bg3);border-radius:8px;padding:12px;margin-top:10px}
+#spo-panel .spo-steps li{font-size:12px;color:var(--text2);margin-bottom:6px;line-height:1.5}
+#hidden-file{display:none}
+/* NO RESULTS */
+.no-results{text-align:center;color:var(--text3);padding:44px 20px;font-size:14px}
+/* SUCCESS TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:#276749;color:#9ae6b4;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:700;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+/* Responsive geral */
+@media(max-width:768px){
+  .grid2{grid-template-columns:1fr}
+  #header{padding:10px 12px}
+  .header-text h1{font-size:13px}
+  .tabs{width:100%;margin-left:0}
+  .tab-btn{flex:1;text-align:center;font-size:11px;padding:6px 6px}
+  #modal{padding:16px}
+}
+
+/* ── OFFLINE / SYNC STATUS ──────────────────────────────────────────────── */
+#offline-banner{display:none;background:#744210;color:#fbd38d;padding:8px 20px;
+  font-size:12px;font-weight:700;text-align:center;border-bottom:1px solid #c05621}
+#sync-status-bar{display:flex;align-items:center;gap:8px;padding:5px 20px;
+  background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;color:var(--text3);flex-wrap:wrap}
+#sync-status-bar .ss-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+#sync-status-bar .ss-dot.ok{background:#48bb78}
+#sync-status-bar .ss-dot.warn{background:#ed8936}
+#sync-status-bar .ss-dot.err{background:#fc8181}
+#sync-status-bar .ss-dot.spin{background:#4299e1;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ss-link-btn{background:none;border:none;color:var(--accent2);cursor:pointer;font-size:11px;
+  text-decoration:underline;padding:0;font-family:inherit}
+/* Settings modal */
+#settings-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
+  z-index:500;align-items:center;justify-content:center;padding:20px}
+#settings-modal-overlay.open{display:flex}
+#settings-modal{background:var(--card);border:1px solid var(--border);border-radius:16px;
+  width:100%;max-width:620px;max-height:90vh;overflow-y:auto;padding:26px}
+.stg-label{font-size:12px;font-weight:700;color:var(--text2);display:block;margin-bottom:5px;margin-top:14px}
+.stg-input{width:100%;padding:9px 12px;border-radius:7px;border:1px solid var(--border);
+  background:var(--input);color:var(--text);font-size:13px;outline:none;box-sizing:border-box}
+.stg-input:focus{border-color:var(--accent)}
+.stg-help{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5}
+.stg-row{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}
+/* ── IMPRESSÃO A4 HORIZONTAL ─────────────────────────────────────────────── */
+@media print {
+  /* PDF gerado em janela separada via gerarPDF() — não imprimir esta janela */
+  body { display: none !important; }
+}
+/* Cabeçalho e rodapé de impressão — ocultos no ecrã (legado, já não usados) */
+#print-header-pv, #print-header-bd,
+#print-footer-pv, #print-footer-bd { display: none !important; }
+</style>
+</head>
+<body>
+<!-- OFFLINE BANNER -->
+<div id="offline-banner">⚡ SEM LIGAÇÃO DE REDE — A mostrar dados do último carregamento local. Ligue-se à rede para actualizar.</div>
+<!-- SYNC STATUS BAR -->
+<div id="sync-status-bar">
+  <span class="ss-dot ok" id="ss-dot"></span>
+  <span id="ss-text">A verificar dados…</span>
+  <button class="ss-link-btn" onclick="syncTudo()" id="ss-sync-btn">Actualizar agora</button>
+  <span style="margin-left:auto;display:flex;gap:6px">
+    <button class="ss-link-btn" onclick="openSettings()" id="ss-settings-btn" style="display:none">⚙️ Configurações de ligação</button>
+  </span>
+</div>
+<div id="toast">✓ Registo atualizado com sucesso!</div>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo-wrap">
+    <div class="logo">
+      <!-- JAP Logo SVG -->
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="36" height="36" rx="8" fill="#e53e3e"/>
+        <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Arial Black,Arial" font-weight="900" font-size="16" letter-spacing="-1">JAP</text>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>Grupo JAP — Gestão de Armazéns</h1>
+      <p>Sistema de Pontos de Venda · Desenvolvido por Élio Pontes</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('pesquisa')" title="Pesquisa e filtragem avançada. Todos os dados de cada PV visíveis sem necessidade de clicar.">🔎 Pesquisa PV</button>
+      <button class="tab-btn" onclick="showTab('bd')" title="Base de Dados completa de Armazéns. Acesso protegido por palavra-passe. Permite editar registos.">🗄️ BD Armazéns 🔒</button>
+    </div>
+    <button class="feedback-btn" onclick="openFeedback()" title="Enviar sugestão, reportar erro ou pedir correcção de dados ao Élio Pontes" style="padding:7px 11px;font-size:12px">💬</button>
+    <button class="col-btn" onclick="openSettings()" id="header-settings-btn" style="display:none" title="Configurar URL da lista SharePoint e opções de sincronização automática" style="padding:7px 11px;font-size:12px">⚙️</button>
+    <button class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Alternar entre tema claro ☀️ e escuro 🌙">🌙</button>
+  </div>
+</div>
+
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- TAB PESQUISA -->
+  <div id="tab-pesquisa">
+    <div class="search-panel">
+      <div class="sp-header">
+        <span class="sp-title">🔎 Filtros de Pesquisa Combinados</span>
+        <button class="clear-btn" onclick="clearFilters()">✕ Limpar todos os filtros</button>
+      </div>
+      <div class="filters-grid">
+        <div><label class="fl">Texto livre (qualquer campo)</label><input class="fi" id="f-texto" placeholder="Nome, email, responsável…" oninput="renderPesquisa()" title="Pesquisa em todos os campos simultaneamente. Ignora maiúsculas, minúsculas e acentuação. Ex: 'guimaraes' encontra 'Guimarães'."></div>
+        <div><label class="fl">Zona</label><select class="fi" id="f-zona" onchange="renderPesquisa()" title="Filtrar por zona geográfica: Norte, Centro, Sul, Portugal ou Internacional."><option value="">— Todas —</option></select></div>
+        <div><label class="fl">Empresa Grupo JAP</label><select class="fi" id="f-empresa" onchange="renderPesquisa()" title="Filtrar por empresa do Grupo JAP a que pertence o armazém."><option value="">— Todas —</option></select></div>
+        <div><label class="fl">Distrito</label><select class="fi" id="f-distrito" onchange="renderPesquisa()" title="Filtrar por distrito onde o armazém está localizado."><option value="">— Todos —</option></select></div>
+        <div><label class="fl">Marca</label><select class="fi" id="f-marca" onchange="renderPesquisa()" title="Filtrar armazéns que trabalham com uma determinada marca automóvel."><option value="">— Todas —</option></select></div>
+        <div><label class="fl">Tipo de Armazém</label><select class="fi" id="f-tipo" onchange="renderPesquisa()" title="P=Primário (Concessão Principal), S=Secundário, A=Central (CDP), O=Oficina Grupo, #=Não Físico."><option value="">— Todos —</option></select></div>
+        <div><label class="fl">Serve TIE</label><select class="fi" id="f-serveTie" onchange="renderPesquisa()" title="TIE = Transferência Interna de Stock. 'Serve TIE' significa que este PV RECEBE transferências de outros armazéns."><option value="">— Todos —</option><option>SIM</option><option>NÃO</option><option>N/D</option></select></div>
+        <div><label class="fl">Efetua TIE</label><select class="fi" id="f-efetuaTie" onchange="renderPesquisa()" title="TIE = Transferência Interna de Stock. 'Efetua TIE' significa que este PV ENVIA/REALIZA transferências para outros armazéns."><option value="">— Todos —</option><option>SIM</option><option>NÃO</option><option>N/D</option></select></div>
+        <div><label class="fl">Colisão</label><select class="fi" id="f-colisao" onchange="renderPesquisa()" title="Filtrar armazéns que têm serviço de reparação de colisão (chapa e pintura)."><option value="">— Todos —</option><option>SIM</option><option>NÃO</option></select></div>
+        <div><label class="fl">Mecânica</label><select class="fi" id="f-mecanica" onchange="renderPesquisa()" title="Filtrar armazéns que têm serviço de mecânica (reparação de motor, suspensão, etc.)."><option value="">— Todos —</option><option>SIM</option><option>NÃO</option></select></div>
+        <div><label class="fl">Balcão de Peças</label><select class="fi" id="f-balcao" onchange="renderPesquisa()" title="Filtrar armazéns que têm balcão de venda a público de peças automóvel."><option value="">— Todos —</option><option>SIM</option><option>NÃO</option></select></div>
+        <div><label class="fl">Coordenador CA</label><select class="fi" id="f-ca" onchange="renderPesquisa()" title="Filtrar armazéns por Coordenador de Armazém (CA) responsável."><option value="">— Todos —</option></select></div>
+      </div>
+    </div>
+    <!-- Input file oculto para importação na Pesquisa PV -->
+    <input type="file" id="hidden-file-pv" accept=".xlsx,.xls" onchange="importExcel(event)" style="display:none">
+    <div class="results-bar">
+      <div class="results-count" id="pesquisa-count"></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="sync-btn" onclick="syncTudo()" id="sync-btn-pv" title="Tenta actualizar automaticamente: 1º Lista SPO, 2º Excel SPO direto, 3º Excel SPO via sessão do browser. Sem intervenção do utilizador.">⚡ Actualizar</button>
+        <button class="exp-btn" onclick="downloadAndImportExcel()" title="Descarrega o Excel do SharePoint e importa automaticamente. Use quando a ligação à lista SharePoint não funciona.">⬇️ Download Excel SPO</button>
+        <button class="imp-btn" onclick="document.getElementById('hidden-file-pv').click()" title="Importar manualmente um ficheiro Excel já descarregado. Alternativa offline ao Download Excel SPO.">📥 Importar Excel Local</button>
+        <button class="col-btn" onclick="togglePvColSelector()" title="Escolher quais as colunas são visíveis na tabela da Pesquisa PV.">⚙️ Colunas</button>
+        <button class="print-btn" onclick="gerarPDF('pesquisa')" title="Gerar PDF com os dados filtrados e colunas activas — A4 Horizontal">🖨️ Gerar PDF</button>
+      </div>
+    </div>
+    <!-- Pesquisa PV Column Selector -->
+    <div id="pv-col-panel" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700;color:var(--text)">⚙️ Colunas visíveis — Pesquisa PV</span>
+        <div style="display:flex;gap:8px">
+          <button onclick="selectAllPvCols(true)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:11px">Todas</button>
+          <button onclick="selectAllPvCols(false)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:11px">Nenhuma</button>
+          <button onclick="togglePvColSelector()" style="padding:4px 10px;border-radius:5px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:11px">✓ Aplicar</button>
+        </div>
+      </div>
+      <div id="pv-col-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:6px"></div>
+    </div>
+    <!-- DESKTOP: tabela horizontal -->
+    <div class="table-wrap" id="pesquisa-desktop">
+      <table id="pesquisa-table">
+        <thead><tr>
+          <th title="Código do Ponto de Venda no sistema Autoline">PV</th>
+          <th title="Nome completo do armazém no sistema Autoline">Nome Autoline</th>
+          <th title="Empresa do Grupo JAP a que pertence este PV">Empresa</th>
+          <th title="Distrito e Concelho onde está localizado o armazém">Distrito / Concelho</th>
+          <th title="Zona geográfica: Norte, Centro, Sul ou Portugal">Zona</th>
+          <th title="Tipo de armazém: Primário, Secundário, Central, Oficina ou Não Físico">Tipo</th>
+          <th title="Marcas automóvel trabalhadas neste armazém">Marcas</th>
+          <th title="Serve TIE — Este PV recebe transferências internas de stock">S.TIE</th>
+          <th title="Efetua TIE — Este PV realiza transferências internas de stock">E.TIE</th>
+          <th title="Serviço de reparação de colisão disponível neste PV">Colisão</th>
+          <th title="Serviço de mecânica disponível neste PV">Mecânica</th>
+          <th title="Balcão de venda de peças disponível neste PV">Balcão</th>
+        </tr></thead>
+        <tbody id="pesquisa-tbody"></tbody>
+      </table>
+    </div>
+    <!-- MOBILE: cartões verticais -->
+    <div id="pesquisa-mobile"></div>
+    <div class="no-results" id="pesquisa-noresults" style="display:none">Nenhum resultado com os filtros selecionados.</div>
+  </div>
+
+  <!-- TAB BD -->
+  <div id="tab-bd" style="display:none">
+    <div id="login-screen">
+      <div class="login-card">
+        <div class="login-logo">
+          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="white" font-family="Arial Black,Arial" font-weight="900" font-size="20" letter-spacing="-1">JAP</text>
+          </svg>
+        </div>
+        <div class="login-title">BD Armazéns — Acesso Restrito</div>
+        <div class="login-sub">Introduza a palavra-passe de acesso<br>para continuar</div>
+        <input class="pw-input" type="password" id="pw-input" placeholder="Palavra-passe" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="login-btn" onclick="doLogin()">🔓 Entrar</button>
+        <div class="err-msg" id="pw-err" style="display:none">Palavra-passe incorreta. Tente novamente.</div>
+      </div>
+    </div>
+    <div id="bd-content" style="display:none">
+      <div id="spo-panel">
+        <h3>🔗 Ligação SharePoint — Fonte de Dados</h3>
+        <!-- Tipo de fonte activa -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:700;color:var(--text2)">Fonte activa:</span>
+          <span id="spo-active-type" style="font-size:12px;padding:3px 10px;border-radius:99px;background:var(--norte-bg);color:var(--norte-c);font-weight:700">Lista SharePoint</span>
+          <button onclick="openSettings()" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-size:11px">✏️ Alterar configuração</button>
+        </div>
+        <!-- Link editável da Lista -->
+        <div id="spo-list-section" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:4px">📋 URL da Lista SharePoint (editável)</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input id="spo-list-url-inline" type="text" style="flex:1;min-width:280px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:12px;outline:none;font-family:monospace"
+              placeholder="https://jappt.sharepoint.com/sites/.../Lists/.../" value="">
+            <button onclick="spoSaveListUrl()" style="padding:6px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 Guardar</button>
+            <a id="spo-list-open-btn" href="#" target="_blank" style="padding:6px 12px;border-radius:6px;border:1px solid #553c9a;background:transparent;color:#d6bcfa;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">🌐 Abrir Lista</a>
+          </div>
+        </div>
+        <!-- Link editável do Excel -->
+        <div id="spo-excel-section" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--text3);margin-bottom:4px">📊 URL do ficheiro Excel no SharePoint (editável)</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input id="spo-excel-url-inline" type="text" style="flex:1;min-width:280px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input);color:var(--text);font-size:12px;outline:none;font-family:monospace"
+              placeholder="https://jappt.sharepoint.com/sites/.../.xlsx" value="">
+            <button onclick="spoSaveExcelUrl()" style="padding:6px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer">💾 Guardar</button>
+            <a id="spo-excel-open-btn" href="#" target="_blank" style="padding:6px 12px;border-radius:6px;border:1px solid #276749;background:transparent;color:#9ae6b4;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">📂 Abrir Excel</a>
+          </div>
+        </div>
+        <!-- Botões de download -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <button onclick="downloadFromSharePoint()" style="padding:6px 13px;border-radius:7px;border:1px solid #2b6cb0;background:transparent;color:#90cdf4;cursor:pointer;font-size:12px;font-weight:700" title="Descarrega o Excel directamente do SharePoint para o teu computador (requer autenticação SPO activa)">⬇️ Download Excel do SPO</button>
+        </div>
+        <!-- Aviso CORS -->
+        <div id="spo-cors-warn" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(229,62,62,.1);border:1px solid rgba(229,62,62,.3);border-radius:8px;font-size:12px;color:var(--accent2)">
+          ⚠️ <strong>Erro de ligação ao SharePoint</strong> — O browser bloqueou o acesso (CORS/autenticação).<br>
+          Solução: <strong>abre o SharePoint no browser</strong> para autenticar, depois clica em <strong>⚡ Actualizar</strong>.
+          Se o erro persistir, usa <strong>📥 Importar Excel</strong> (download manual + importação).
+        </div>
+      </div>
+      <input type="file" id="hidden-file" accept=".xlsx,.xls" onchange="importExcel(event)">
+      <div class="bd-toolbar">
+        <input class="quick-input" type="text" id="bd-q" placeholder="🔍  Pesquisa em todos os campos da BD…" oninput="renderBD()" style="flex:1;max-width:380px" title="Pesquisa livre em todos os campos da base de dados. Ignora maiúsculas, minúsculas e acentos.">
+        <span class="count-badge" id="bd-count"></span>
+        <button class="clr-bd-btn" onclick="clearBDFilter()" title="Limpar o texto de pesquisa da BD e mostrar todos os registos">✕ Limpar</button>
+        <button class="sync-btn" onclick="syncTudo()" id="sync-btn-bd" title="Tenta actualizar automaticamente: 1º Lista SPO, 2º Excel SPO direto, 3º Excel SPO via sessão do browser. Sem intervenção do utilizador.">⚡ Actualizar</button>
+        <button class="imp-btn" onclick="document.getElementById('hidden-file').click()" title="Importar manualmente o ficheiro Excel descarregado do SharePoint. Use como alternativa se a actualização automática falhar.">📥 Importar Excel</button>
+        <button class="exp-btn" onclick="exportLocalToExcel()" title="Exportar os dados actuais da BD para um ficheiro Excel local — permite trabalhar offline e fazer update manual">💾 Exportar Excel Local</button>
+        <button class="col-btn" onclick="toggleColSelector()" title="Escolher quais as colunas visíveis na tabela da BD Armazéns">⚙️ Colunas</button>
+        <button class="print-btn" onclick="gerarPDF('bd')" title="Gerar PDF da BD com os dados filtrados e colunas activas — A4 Horizontal">🖨️ Gerar PDF</button>
+        <button class="feedback-btn" onclick="openFeedback()" title="Enviar sugestão de melhoria ou reportar um erro directamente ao Élio Pontes">💬 Feedback</button>
+        <button class="lock-btn" onclick="lockBD()" title="Bloquear o acesso à BD Armazéns e regressar à Pesquisa PV">🔒 Bloquear BD</button>
+      </div>
+      <!-- Column Selector Panel -->
+      <div id="col-panel" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-size:13px;font-weight:700;color:var(--text)">⚙️ Escolher colunas visíveis na BD</span>
+          <div style="display:flex;gap:8px">
+            <button onclick="selectAllCols(true)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:11px">Todas</button>
+            <button onclick="selectAllCols(false)" style="padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:11px">Nenhuma</button>
+            <button onclick="toggleColSelector()" style="padding:4px 10px;border-radius:5px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:11px">✓ Aplicar</button>
+          </div>
+        </div>
+        <div id="col-checkboxes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:6px"></div>
+      </div>
+      <div class="table-wrap">
+        <table id="bd-table">
+          <thead id="bd-thead"><tr id="bd-header-row"></tr></thead>
+          <tbody id="bd-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- FOOTER -->
+<div id="footer">
+  <strong>Grupo JAP — Sistema de Gestão de Armazéns</strong> &nbsp;|&nbsp;
+  Desenvolvido por <strong>Élio Pontes</strong> &nbsp;·&nbsp;
+  <a href="mailto:epontes@grupojap.pt">epontes@grupojap.pt</a> &nbsp;·&nbsp;
+  <a href="tel:+351961580107">+351 961 580 107</a>
+  &nbsp;|&nbsp; v2.1 · 2026
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal-overlay" onclick="if(event.target===this)closeSettings()">
+  <div id="settings-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div>
+        <div style="font-size:17px;font-weight:800;color:var(--text)">⚙️ Configurações de Ligação</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Ligar ao SharePoint — Lista ou Excel</div>
+      </div>
+      <button onclick="closeSettings()" style="padding:7px 13px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);cursor:pointer;font-size:13px">✕ Fechar</button>
+    </div>
+
+    <!-- Tipo de fonte -->
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px">Tipo de fonte de dados</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:8px 14px;border-radius:7px;border:2px solid var(--border);background:var(--bg3)" id="type-list-lbl">
+          <input type="radio" name="src-type" value="list" id="src-type-list" onchange="onSrcTypeChange()" style="cursor:pointer">
+          📋 Lista SharePoint <small style="color:var(--text3)">(recomendado)</small>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:8px 14px;border-radius:7px;border:2px solid var(--border);background:var(--bg3)" id="type-excel-lbl">
+          <input type="radio" name="src-type" value="excel" id="src-type-excel" onchange="onSrcTypeChange()" style="cursor:pointer">
+          📊 Ficheiro Excel
+        </label>
+      </div>
+    </div>
+
+    <!-- Lista SharePoint -->
+    <div id="cfg-list-section">
+      <label class="stg-label">URL da Lista SharePoint</label>
+      <input class="stg-input" id="cfg-list-url" placeholder="https://jappt.sharepoint.com/sites/coordenacao_armazens_JAPparts/Lists/Armazns_Grupo_JAP/AllItems.aspx" value="">
+      <div class="stg-help">Cole o URL completo da lista. A app extrai automaticamente o site e o nome da lista.<br>
+        Exemplo: <em>…/sites/coordenacao_armazens_JAPparts/Lists/Armazns_Grupo_JAP/AllItems.aspx</em></div>
+      <div class="stg-row">
+        <button onclick="testListConnection()" class="sync-btn" style="font-size:12px" id="test-list-btn">🔌 Testar ligação</button>
+        <span id="test-list-result" style="font-size:12px;color:var(--text3)"></span>
+      </div>
+    </div>
+
+    <!-- Excel SharePoint -->
+    <div id="cfg-excel-section" style="display:none">
+      <label class="stg-label">URL do ficheiro Excel no SharePoint</label>
+      <input class="stg-input" id="cfg-excel-url" placeholder="https://jappt.sharepoint.com/sites/…/ficheiro.xlsx" value="">
+      <div class="stg-help">Cole o link directo de download do Excel. Pode obter em SharePoint → ficheiro → … → Copiar link</div>
+    </div>
+
+    <!-- Sync automático -->
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px">Sincronização automática</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:8px">
+        <input type="checkbox" id="cfg-auto-sync" style="cursor:pointer" checked>
+        Actualizar automaticamente ao abrir a aplicação
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="cfg-save-local" style="cursor:pointer" checked>
+        Guardar dados localmente (continua a funcionar sem rede)
+      </label>
+    </div>
+
+    <!-- Último sync info -->
+    <div style="margin-top:14px;padding:10px 14px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--text3)" id="cfg-last-sync-info">
+      Sem dados guardados localmente ainda.
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap">
+      <button onclick="clearLocalData()" style="padding:8px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--accent2);cursor:pointer;font-size:12px">🗑️ Limpar dados locais</button>
+      <button onclick="saveSettings()" style="padding:9px 20px;border-radius:7px;border:none;background:var(--accent);color:#fff;font-weight:700;font-size:13px;cursor:pointer">💾 Guardar configurações</button>
+    </div>
+  </div>
+</div>
+
+<!-- FEEDBACK MODAL -->
+<div id="fb-overlay" onclick="if(event.target===this)closeFeedback()">
+  <div id="fb-modal">
+    <div class="fb-h">💬 Feedback — Sugestões & Erros</div>
+    <div class="fb-sub">Envie directamente para <strong>Élio Pontes</strong> (epontes@grupojap.pt)</div>
+    <label class="fb-label">Tipo de feedback</label>
+    <select class="fb-select" id="fb-tipo">
+      <option value="Sugestão de melhoria">💡 Sugestão de melhoria</option>
+      <option value="Correcção de dados">✏️ Correcção de dados</option>
+      <option value="Erro / Bug">🐛 Erro / Bug na aplicação</option>
+      <option value="Novo campo ou funcionalidade">➕ Novo campo ou funcionalidade</option>
+      <option value="Outro">📋 Outro</option>
+    </select>
+    <label class="fb-label">PV / Armazém em causa (opcional)</label>
+    <input class="fb-input" id="fb-pv" placeholder="Ex: PV 21 — CARBY TECH 1 - GUIMARÃES">
+    <label class="fb-label">Descrição detalhada</label>
+    <textarea class="fb-textarea" id="fb-desc" placeholder="Descreva o que pretende melhorar, corrigir ou reportar. Quanto mais detalhe, melhor!"></textarea>
+    <div class="fb-actions">
+      <button class="fb-cancel" onclick="closeFeedback()">Cancelar</button>
+      <button class="fb-send" onclick="sendFeedback()">📧 Enviar por Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="overlay" onclick="if(event.target===this)closeModal()">
+  <div id="modal"></div>
+</div>
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+const PASSWORD = "JAP2026";
+
+// ── BASE DE DADOS ─────────────────────────────────────────────────────────────
+let DB = [
+{"PV":"21","NOME":"CARBY TECH 1 - GUIMARÃES","EMP":"CARBY TECH 1","GESCOM":"JAP3 - GUIMARÃES","MORADA":"Lugar de Moucos, Nº1120","CP":"4835-000 Guimarães","NIF":"501139176","ZONA":"Norte","DIST":"Braga","CONC":"Guimarães","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Guimaraes JAP3","EMAIL":"arm.gmrn@grupojap.pt","CONT_EXT":"253439750","RESP":"Hélder H.R. Renato","EMAIL_RESP":"hrenato@grupojap.pt","CONT":"912872950","TIPO":"P-Concessão e Armazém Primário","M1":"Nissan","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"SIM","PP":"SIM","STACK":"SIM","OUTROS":"NG"},
+{"PV":"22","NOME":"CARBY TECH 1 - VILA REAL","EMP":"CARBY TECH 1","GESCOM":"JAP/JAP3 VILA REAL","MORADA":"Zona Industrial Constantim, Lt 152","CP":"5000-082 Vila Real","NIF":"501139176","ZONA":"Norte","DIST":"Vila Real","CONC":"Vila Real","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Vila Real JAP/JAP3","EMAIL":"arm.vrl@grupojap.pt","CONT_EXT":"259309003","RESP":"Paulo Correia da Silva","EMAIL_RESP":"psilva@grupojap.pt","CONT":"259309003","TIPO":"S-Concessão e Armazém Secundário","M1":"Nissan","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"8B, NV"},
+{"PV":"23","NOME":"CARBY TECH 1 - MARCO DE CANAVESES","EMP":"CARBY TECH 1","GESCOM":"JAP/JAP3 MARCO","MORADA":"Av. Gago Coutinho nº 248","CP":"4630-206 Marco de Canaveses","NIF":"501139176","ZONA":"Norte","DIST":"Porto","CONC":"Marco de Canaveses","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Marco JAP/JAP3","EMAIL":"arm.mcn@grupojap.pt","CONT_EXT":"255538100","RESP":"Hélder Madureira","EMAIL_RESP":"hmadureira@carby.pt","CONT":"255539100","TIPO":"S-Concessão e Armazém Secundário","M1":"Nissan","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Reinaldo Teixeira","EMAIL_RC":"RTeixeira@grupojap.pt","CONT_RC":"919545780","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"8A"},
+{"PV":"24","NOME":"CARBY TECH 1 - CDP - REBORDOSA","EMP":"CARBY TECH 1","GESCOM":"JAP PARTS CDP","MORADA":"Rua da Portela, nº 43 - Rebordosa","CP":"4585-497 Paredes","NIF":"501139176","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"CDP JAP Parts Norte","EMAIL":"armazemj1@japparts.pt","CONT_EXT":"","RESP":"Miguel Pinto","EMAIL_RESP":"miguel.pinto@carby.pt","CONT":"961592624","TIPO":"A-Armazém Central","M1":"Nissan","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"SIM","PP":"SIM","STACK":"SIM","OUTROS":"8C, 95, J1, G1"},
+{"PV":"31","NOME":"AUTO PARQUE","EMP":"AUTO PARQUE LDA","GESCOM":"LAMEGO","MORADA":"Retiro dos Passarinhos","CP":"5100-054 Lamego","NIF":"500742138","ZONA":"Norte","DIST":"Viseu","CONC":"Lamego","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Lamego AutoParque","EMAIL":"arm.lmg@grupojap.pt","CONT_EXT":"254609190","RESP":"André Fernandes","EMAIL_RESP":"anfernandes@carby.pt","CONT":"254609190","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"41","NOME":"MYCARCENTER","EMP":"MYCARCENTER CPA LDA","GESCOM":"MYCARCENTER","MORADA":"RUA DA SERRA, 214","CP":"4585-760 Vandoma","NIF":"500286540","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"Pecas MyCarCenter","EMAIL":"pecasmycarcenter@grupojap.pt","CONT_EXT":"964150954","RESP":"Vitor Veiga","EMAIL_RESP":"vveiga@grupojap.pt","CONT":"969768369","TIPO":"O-Oficina Grupo","M1":"MULTIMARCAS (Z)","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":""},
+{"PV":"81","NOME":"VESAUTO - Venda Seca","EMP":"VESAUTO SA","GESCOM":"VESAUTO VENDA SECA","MORADA":"EN 250, Apartado 32 - Venda Seca","CP":"2606-901 Belas","NIF":"501316272","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Venda Seca Vesauto","EMAIL":"armazemj2@japparts.pt","CONT_EXT":"214238850","RESP":"João C. Capitão Rodrigues","EMAIL_RESP":"joao.crodrigues@grupojap.pt","CONT":"967183896","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"Mitsubishi","M4":"Fuso","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"SIM","PP":"SIM","STACK":"NÃO","OUTROS":"NE"},
+{"PV":"82","NOME":"VESAUTO - Alfragide","EMP":"VESAUTO SA","GESCOM":"VESAUTO ALFRAGIDE","MORADA":"Avenida Marconi,","CP":"2720-413 Amadora","NIF":"501316272","ZONA":"Centro","DIST":"Lisboa","CONC":"Amadora","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Alfragide Vesauto","EMAIL":"arm.alf@grupojap.pt","CONT_EXT":"210993949","RESP":"Avelino Teixeira","EMAIL_RESP":"avelinoteixeixeira@carby.pt","CONT":"967103058","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"83","NOME":"VESAUTO - Casal do Cotão","EMP":"VESAUTO SA","GESCOM":"VESAUTO CASAL COTÃO","MORADA":"Rua Marciano Tomás da Costa,","CP":"2735-512 Agualva-Cacém","NIF":"501316272","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Casal Do Cotao Vesauto","EMAIL":"arm.cot@grupojap.pt","CONT_EXT":"211947246","RESP":"Sérgio Paiva","EMAIL_RESP":"sergio.paiva@carby.pt","CONT":"211947246","TIPO":"O-Oficina Grupo","M1":"","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Vitor Rodrigues","EMAIL_RC":"vitorrodrigues@vesauto.pt","CONT_RC":"926354826","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"84","NOME":"VESAUTO - Abrunheira","EMP":"VESAUTO SA","GESCOM":"VESAUTO ABRUNHEIRA","MORADA":"Av. Combatentes 74","CP":"2710-034 Sintra","NIF":"501316272","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Abrunheira Vesauto","EMAIL":"arm.abr@grupojap.pt","CONT_EXT":"219251633 / 34","RESP":"Diogo Lourenço","EMAIL_RESP":"diogo.lourenco@japparts.pt","CONT":"967102092","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Vitor Rodrigues","EMAIL_RC":"vitorrodrigues@vesauto.pt","CONT_RC":"926354826","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"85","NOME":"VESAUTO - Torres Vedras","EMP":"VESAUTO SA","GESCOM":"VESAUTO T. VEDRAS","MORADA":"Estrada Nacional nº 9","CP":"2560-250 Torres Vedras","NIF":"501316272","ZONA":"Centro","DIST":"Lisboa","CONC":"Torres Vedras","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Torres Vedras Vesauto","EMAIL":"arm.tov@grupojap.pt","CONT_EXT":"261092610","RESP":"Angelo Santos","EMAIL_RESP":"angelo.santos@carby.pt","CONT":"261092610","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"Mitsubishi","M4":"Fuso","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840074","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Vitor Rodrigues","EMAIL_RC":"vitorrodrigues@vesauto.pt","CONT_RC":"926354826","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"NT"},
+{"PV":"86","NOME":"VESAUTO - Tagus Park","EMP":"VESAUTO SA","GESCOM":"VESAUTO TAGUS","MORADA":"Estrada Nacional 249","CP":"2735-307 Cacém","NIF":"501316272","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Tagus Vesauto","EMAIL":"arm.tag@grupojap.pt","CONT_EXT":"215958733","RESP":"Ricardo Pinheiro","EMAIL_RESP":"ricardopinheiro@carby.pt","CONT":"967103180","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"Mitsubishi","M4":"Fuso","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"NU"},
+{"PV":"91","NOME":"CARBY MOTORS 1 - ALGARVE","EMP":"CARBY MOTORS 1","GESCOM":"JAPBLUE FARO","MORADA":"Av. Doutor Gordinho Moreira nº 5","CP":"8005-518 Faro","NIF":"502272244","ZONA":"Sul","DIST":"Faro","CONC":"Faro","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Faro JAPBlue","EMAIL":"arm.far@japblue.pt","CONT_EXT":"289897987","RESP":"Rui Ferreira","EMAIL_RESP":"rui.ferreira@carby.pt","CONT":"910682245","TIPO":"P-Concessão e Armazém Primário","M1":"VW","M2":"AUDI","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"João Painço","EMAIL_RC":"joao.painco@grupojap.pt","CONT_RC":"912737084","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"92","NOME":"CARBY MOTORS 1 - VILA REAL","EMP":"CARBY MOTORS 1","GESCOM":"JAP BLUE VILA REAL","MORADA":"Zona Industrial Constantim, Lt 90/91","CP":"5000-081 Vila Real","NIF":"502272244","ZONA":"Norte","DIST":"Vila Real","CONC":"Vila Real","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Vila Real JAPBlue","EMAIL":"arm.vrlv@grupojap.pt","CONT_EXT":"","RESP":"Jorge Carvalho","EMAIL_RESP":"jorge.carvalho@carby.pt","CONT":"931840138","TIPO":"P-Concessão e Armazém Primário","M1":"VW","M2":"AUDI","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Reinaldo Teixeira","EMAIL_RC":"RTeixeira@grupojap.pt","CONT_RC":"919545780","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":""},
+{"PV":"93","NOME":"CARBY MOTORS 1 - PENAFIEL","EMP":"CARBY MOTORS 1","GESCOM":"JAPBLUE PENAFIEL","MORADA":"Rua do Tapadinho, 96","CP":"4560-162 Guilhufe","NIF":"502272244","ZONA":"Norte","DIST":"Porto","CONC":"Penafiel","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Penafiel JAPBlue","EMAIL":"arm.pnfv@japautomotive.pt","CONT_EXT":"255729064","RESP":"Hugo Soares","EMAIL_RESP":"hugo.soares@carby.pt","CONT":"255729060","TIPO":"P-Concessão e Armazém Primário","M1":"VW","M2":"AUDI","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"SIM","OUTROS":""},
+{"PV":"94","NOME":"CARBY MOTORS 1 - PAREDES","EMP":"CARBY MOTORS 1","GESCOM":"PAREDES SEDE","MORADA":"Rua Central de Mouriz, 464","CP":"4580-590 Paredes","NIF":"502272244","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"NÃO","ETIE":"SIM","ALIAS":"Colisao Premium Paredes","EMAIL":"colisaopremiumparedes@grupojap.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"O-Oficina Grupo","M1":"MULTIMARCAS (Z)","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"N/D","CONT_CA":"N/D","EMAIL_CA":"N/D","COL":"SIM","RC":"Luis Silva Coelho","EMAIL_RC":"luis.coelho@hendo.pt","CONT_RC":"931840094","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"NÃO","STACK":"NÃO","OUTROS":"11, HENDO PRD"},
+{"PV":"95","NOME":"CARBY MOTORS 1 - CDP - REBORDOSA","EMP":"CARBY MOTORS 1","GESCOM":"JAP PARTS CDP","MORADA":"Rua da Portela, nº 43 - Rebordosa","CP":"4585-497 Paredes","NIF":"502272244","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"CDP JAP Parts Norte","EMAIL":"armazemj1@japparts.pt","CONT_EXT":"","RESP":"Miguel Pinto","EMAIL_RESP":"miguel.pinto@carby.pt","CONT":"961592624","TIPO":"A-Armazém Central","M1":"VW","M2":"AUDI","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"SIM","PP":"SIM","STACK":"SIM","OUTROS":"8C, 24, J1, G1"},
+{"PV":"87","NOME":"VESAUTO - PAREDES","EMP":"VESAUTO SA","GESCOM":"PAREDES SEDE","MORADA":"Rua Central de Mouriz, 464","CP":"4580-590 Paredes","NIF":"505897210","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Paredes","EMAIL":"armazemparedes@grupojap.pt","CONT_EXT":"255710918","RESP":"Carlos Silva","EMAIL_RESP":"carlos.silva@japparts.pt","CONT":"961850104","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Reinaldo Teixeira","EMAIL_RC":"RTeixeira@grupojap.pt","CONT_RC":"919545780","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"94, HENDO PRD"},
+{"PV":"88","NOME":"VESAUTO - AMARANTE","EMP":"VESAUTO SA","GESCOM":"JAP AMARANTE","MORADA":"Edifício do Salto - S Gonçalo","CP":"4600-281 Amarante","NIF":"505897210","ZONA":"Norte","DIST":"Porto","CONC":"Amarante","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Amarante JAP","EMAIL":"OficinaAmarante@grupojap.pt","CONT_EXT":"255420603","RESP":"Marco Oliveira","EMAIL_RESP":"MOliveira@grupojap.pt","CONT":"961580060","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"SIM","OUTROS":""},
+{"PV":"89","NOME":"VESAUTO - GUIMARÃES","EMP":"VESAUTO SA","GESCOM":"JAP/HENDO GUIMARÃES","MORADA":"Rua Capitão Salgueiro Maia nº 121","CP":"4835-604 Guimarães","NIF":"505897210","ZONA":"Norte","DIST":"Braga","CONC":"Guimarães","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Guimaraes JAP/Hendo","EMAIL":"armazemguimaraes@grupojap.pt","CONT_EXT":"253420762","RESP":"Hélder Renato","EMAIL_RESP":"hrenato@carby.pt","CONT":"912872950","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Luis Silva Coelho","EMAIL_RC":"luis.coelho@hendo.pt","CONT_RC":"931840094","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"HENDO GMR"},
+{"PV":"8A","NOME":"VESAUTO - MARCO DE CANAVESES","EMP":"VESAUTO SA","GESCOM":"JAP/JAP3 MARCO","MORADA":"Av. Gago Coutinho nº 248","CP":"4630-206 Marco de Canaveses","NIF":"505897210","ZONA":"Norte","DIST":"Porto","CONC":"Marco de Canaveses","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Marco JAP/JAP3","EMAIL":"arm.mcn@grupojap.pt","CONT_EXT":"255538100","RESP":"Hélder Madureira","EMAIL_RESP":"hmadureira@carby.pt","CONT":"255539100","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Reinaldo Teixeira","EMAIL_RC":"RTeixeira@grupojap.pt","CONT_RC":"919545780","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"23"},
+{"PV":"8B","NOME":"VESAUTO - VILA REAL","EMP":"VESAUTO SA","GESCOM":"JAP/JAP3 VILA REAL","MORADA":"Zona Industrial Constantim, Lt 152","CP":"5000-082 Vila Real","NIF":"505897210","ZONA":"Norte","DIST":"Vila Real","CONC":"Vila Real","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Vila Real JAP/JAP3","EMAIL":"arm.vrl@grupojap.pt","CONT_EXT":"259309003","RESP":"Paulo Correia da Silva","EMAIL_RESP":"psilva@grupojap.pt","CONT":"259309003","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Reinaldo Teixeira","EMAIL_RC":"RTeixeira@grupojap.pt","CONT_RC":"919545780","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"22, NV"},
+{"PV":"8C","NOME":"VESAUTO - CDP - REBORDOSA","EMP":"VESAUTO SA","GESCOM":"JAP PARTS CDP","MORADA":"Rua da Portela, nº 43 - Rebordosa","CP":"4585-497 Paredes","NIF":"505897210","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"CDP JAP Parts Norte","EMAIL":"armazemj1@japparts.pt","CONT_EXT":"","RESP":"Miguel Pinto","EMAIL_RESP":"miguel.pinto@carby.pt","CONT":"961592624","TIPO":"A-Armazém Central","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"SIM","PP":"SIM","STACK":"SIM","OUTROS":"24, 95, J1, G1"},
+{"PV":"8D","NOME":"VESAUTO - OEIRAS","EMP":"VESAUTO SA","GESCOM":"Sem Morada em Gescom","MORADA":"Rua Rui Teles Palhinha 2 - Porto Salvo","CP":"2740-278 Oeiras","NIF":"505897210","ZONA":"Centro","DIST":"Lisboa","CONC":"Oeiras","STIE":"N/D","ETIE":"N/D","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840070","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"","PNEUS":"","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"C1","NOME":"JAP Africa - Santarém","EMP":"JAPAfrica Mobilty Solutions, Lda","GESCOM":"","MORADA":"Estrada Nacional 114 - Km 73,8","CP":"2005-002 Várzea de Santarém","NIF":"514591889","ZONA":"Centro","DIST":"Santarém","CONC":"Santarém","STIE":"NÃO","ETIE":"SIM","ALIAS":"JAPAfrica - GP","EMAIL":"japafricagp@japafrica.com","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"NÃO","PP":"SIM","STACK":"SIM","OUTROS":"J4, NS, S1"},
+{"PV":"HG","NOME":"HENDO GUIMARÃES - Incadea DMS","EMP":"HENDO SA","GESCOM":"","MORADA":"Rua Capitão Salgueiro Maia nº 121","CP":"4835-604 Guimarães","NIF":"501919422","ZONA":"Norte","DIST":"Braga","CONC":"Guimarães","STIE":"NÃO","ETIE":"NÃO","ALIAS":"Armazem Guimaraes JAP/Hendo","EMAIL":"armazemguimaraes@grupojap.pt","CONT_EXT":"253420762","RESP":"Hélder H.R. Renato","EMAIL_RESP":"hrenato@grupojap.pt","CONT":"912872950","TIPO":"P-Concessão e Armazém Primário","M1":"BMW","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Luis Silva Coelho","EMAIL_RC":"luis.coelho@hendo.pt","CONT_RC":"931840094","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"89"},
+{"PV":"HP","NOME":"HENDO PAREDES - Incadea DMS","EMP":"HENDO SA","GESCOM":"","MORADA":"Rua Central de Mouriz, 464","CP":"4580-590 Paredes","NIF":"501919422","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"NÃO","ETIE":"NÃO","ALIAS":"Armazem HENDO Paredes","EMAIL":"armazemhendoprd@grupojap.pt","CONT_EXT":"255710918","RESP":"Carlos Silva","EMAIL_RESP":"255710918 / 255788094","CONT":"","TIPO":"P-Concessão e Armazém Primário","M1":"BMW","M2":"MINI","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Luis Silva Coelho","EMAIL_RC":"luis.coelho@hendo.pt","CONT_RC":"931840094","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"11, 94"},
+{"PV":"J1","NOME":"JAPPARTS NORTE","EMP":"JAP Parts Lda (CDP)","GESCOM":"JAP PARTS CDP","MORADA":"Rua da Portela, nº 43","CP":"4585-497 Paredes","NIF":"513882448","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"CDP JAP Parts Norte","EMAIL":"armazemj1@japparts.pt","CONT_EXT":"","RESP":"Miguel Pinto","EMAIL_RESP":"miguel.pinto@carby.pt","CONT":"961592624","TIPO":"A-Armazém Central","M1":"MULTIMARCAS (Z)","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"SIM","PP":"SIM","STACK":"SIM","OUTROS":"8C, 24, 95, G1, AXIS Norte"},
+{"PV":"J2","NOME":"JAPPARTS - MEM MARTINS","EMP":"JAP Parts Lda (Venda Seca)","GESCOM":"JAPPARTS MEM MARTINS","MORADA":"Rua São Francisco Xavier, Loja E","CP":"2635-195 Mem Martins","NIF":"513882448","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Venda Seca JAP Parts","EMAIL":"armazemj2@japparts.pt","CONT_EXT":"","RESP":"João Carlos Capitão Rodrigues","EMAIL_RESP":"joao.crodrigues@grupojap.pt","CONT":"","TIPO":"A-Armazém Central","M1":"MULTIMARCAS (Z)","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840073","EMAIL_CA":"filipeveiga@carby.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"SIM","PP":"SIM","STACK":"NÃO","OUTROS":""},
+{"PV":"J3","NOME":"JAP Parts # Multi-armazém #","EMP":"JAP Parts Lda (Balcões)","GESCOM":"","MORADA":"# Armazém Triangulação #","CP":"# Armazém NÃO Físico #","NIF":"513882448","ZONA":"Portugal","DIST":"","CONC":"","STIE":"NÃO","ETIE":"SIM","ALIAS":"# Armazém NÃO Físico #","EMAIL":"# Armazém NÃO Físico #","CONT_EXT":"","RESP":"# Armazém NÃO Físico #","EMAIL_RESP":"","CONT":"","TIPO":"# Armazém NÃO Físico #","M1":"","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"","CONT_CA":"","EMAIL_CA":"","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"NÃO","PP":"NÃO","STACK":"NÃO","OUTROS":""},
+{"PV":"J4","NOME":"JAPParts Santarém (International)","EMP":"JAP Parts Lda (Internacional)","GESCOM":"","MORADA":"Estrada Nacional 114 - Km 73,8","CP":"2005-002 Várzea de Santarém","NIF":"513882448","ZONA":"Centro","DIST":"Santarém","CONC":"Santarém","STIE":"SIM","ETIE":"SIM","ALIAS":"Japparts International","EMAIL":"international@japparts.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"MULTIMARCAS (Z)","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"N/D","CONT_CA":"","EMAIL_CA":"","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"NÃO","PP":"SIM","STACK":"SIM","OUTROS":"C1, J4, NS, S1"},
+{"PV":"K1","NOME":"E-AFO - Agueda","EMP":"A.FONTES SA","GESCOM":"A. FONTES - AGUEDA","MORADA":"Praça da Republica, nº 1","CP":"3750-140 Agueda","NIF":"501262300","ZONA":"Norte","DIST":"Aveiro","CONC":"Águeda","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Agueda E.AFONTES","EMAIL":"armazemk1@entreposto.pt","CONT_EXT":"","RESP":"Rui Adrêgo","EMAIL_RESP":"rui.sadrego@carby.pt","CONT":"932723244","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"K2","NOME":"E-AFO - Aveiro","EMP":"A.FONTES SA","GESCOM":"A.FONTES - AVEIRO","MORADA":"Rua Nova de Vilar, 112-114","CP":"3810-196 Aveiro","NIF":"501262300","ZONA":"Norte","DIST":"Aveiro","CONC":"Aveiro","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Aveiro E.AFONTES","EMAIL":"armazemk2@entreposto.pt","CONT_EXT":"234346214","RESP":"José Carlos","EMAIL_RESP":"josec@carby.pt","CONT":"966211570","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"Nissan","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Ivo Pereira","EMAIL_RC":"ipereira@grupojap.pt","CONT_RC":"961580023","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"K3","NOME":"E-AFO - Cacia","EMP":"A.FONTES SA","GESCOM":"A.FONTES - CACIA","MORADA":"Rua Capitão Seferino Abreu","CP":"3800-637 Cacia","NIF":"501262300","ZONA":"Norte","DIST":"Aveiro","CONC":"Aveiro","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Cacia E.AFONTES","EMAIL":"armazemk3@entreposto.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Renault","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"K4","NOME":"E-AFO - Feira","EMP":"A.FONTES SA","GESCOM":"A.FONTES - FEIRA","MORADA":"Zona Industrial do Roligo","CP":"4520-115 Santa Maria da Feira","NIF":"501262300","ZONA":"Norte","DIST":"Aveiro","CONC":"Santa Maria da Feira","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Feira E.AFONTES","EMAIL":"armazemk4@entreposto.pt","CONT_EXT":"","RESP":"Rui Manuel Ferreira","EMAIL_RESP":"rmferrei@carby.pt","CONT":"256331036","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"Nissan","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"SIM","RC":"Ivo Pereira","EMAIL_RC":"ipereira@grupojap.pt","CONT_RC":"961580023","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"R2"},
+{"PV":"L1","NOME":"CARBY TECH 2 - FARO","EMP":"CARBY TECH 2","GESCOM":"ENTREPOSTO ALGARVE - FARO","MORADA":"Sitio dos Salgados, Apt. 426","CP":"8001-905 Faro","NIF":"501387064","ZONA":"Sul","DIST":"Faro","CONC":"Faro","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Faro E.ALGARVE","EMAIL":"armazemL1@entreposto.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"P-Concessão e Armazém Primário","M1":"Nissan","M2":"Hyundai","M3":"Mitsubishi","M4":"Fuso","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"João Painço","EMAIL_RC":"joao.painco@grupojap.pt","CONT_RC":"912737084","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"NF"},
+{"PV":"L2","NOME":"CARBY TECH 2 - PORTIMÃO","EMP":"CARBY TECH 2","GESCOM":"ENTREPOSTO ALGARVE - P. MOURINHA","MORADA":"Pedra Mourinha, Lote 12","CP":"8500-815 Portimão","NIF":"501387064","ZONA":"Sul","DIST":"Faro","CONC":"Portimão","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Portimao E.ALGARVE","EMAIL":"armazemL2@entreposto.pt","CONT_EXT":"","RESP":"Herlander Pereira","EMAIL_RESP":"hpereira@carby.pt","CONT":"966211641","TIPO":"P-Concessão e Armazém Primário","M1":"Nissan","M2":"Hyundai","M3":"Mitsubishi","M4":"Fuso","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840076","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"João Painço","EMAIL_RC":"joao.painco@grupojap.pt","CONT_RC":"912737084","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"NÃO","EMP_EQ":"","PP":"","STACK":"","OUTROS":"NR"},
+{"PV":"M1","NOME":"E-ALM - Faro","EMP":"ALMOTOR SA","GESCOM":"ENTREPOSTO ALGARVE - FARO","MORADA":"EN 125, Sitio dos Salgados, Ed. Renault","CP":"8001-144 Faro","NIF":"501521330","ZONA":"Sul","DIST":"Faro","CONC":"Faro","STIE":"NÃO","ETIE":"SIM","ALIAS":"Arm Faro E.ALMOTOR","EMAIL":"armazemm1@entreposto.pt","CONT_EXT":"289880006","RESP":"Vitor Silva","EMAIL_RESP":"vitors@entreposto.pt","CONT":"289880006","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"João Painço","EMAIL_RC":"joao.painco@grupojap.pt","CONT_RC":"912737084","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"M2","NOME":"E-ALM - Loule","EMP":"ALMOTOR SA","GESCOM":"ALMOTOR - LOULÉ","MORADA":"Rua Humberto Pacheco, nº 39","CP":"8100-735 Loulé","NIF":"501521330","ZONA":"Sul","DIST":"Faro","CONC":"Loulé","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Loule E.ALMOTOR","EMAIL":"armazemm2@entreposto.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"S-Concessão e Armazém Secundário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"João Painço","EMAIL_RC":"joao.painco@grupojap.pt","CONT_RC":"912737084","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"M3","NOME":"E-ALM - Portimao","EMP":"ALMOTOR SA","GESCOM":"ALMOTOR - PORTIMÃO","MORADA":"Av. D Afonso Henriques","CP":"8500-502 Portimão","NIF":"501521330","ZONA":"Sul","DIST":"Faro","CONC":"Portimão","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Portimao E.ALMOTOR","EMAIL":"armazemm3@entreposto.pt","CONT_EXT":"","RESP":"Herlander Pereira","EMAIL_RESP":"hpereira@carby.pt","CONT":"966211641","TIPO":"P-Concessão e Armazém Primário","M1":"Renault","M2":"Dacia","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"João Painço","EMAIL_RC":"joao.painco@grupojap.pt","CONT_RC":"912737084","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"NÃO","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"N2","NOME":"E-LIS - Olivais1","EMP":"ENTREPOSTO","GESCOM":"ENTREPOSTO OLIVAIS 1","MORADA":"Praça Jose Queiros, 1","CP":"1800-237 Lisboa","NIF":"501437479","ZONA":"Centro","DIST":"Lisboa","CONC":"Lisboa","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Olivais1 E.LISBOA","EMAIL":"armazemn2@entreposto.pt","CONT_EXT":"","RESP":"André Graça","EMAIL_RESP":"andre.egraca@carby.pt","CONT":"967183844","TIPO":"P-Concessão e Armazém Primário","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"Nio","M5":"Firefly","M6":"GAC - Aion","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Paulo Bento","EMAIL_RC":"pbento@entreposto.pt","CONT_RC":"918725037","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"NE","NOME":"E.LISBOA - VENDA SECA","EMP":"ENTREPOSTO","GESCOM":"VESAUTO VENDA SECA","MORADA":"EN 250, Apartado 32 - Venda Seca","CP":"2606-901 Belas","NIF":"501437479","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"SIM","ETIE":"SIM","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Foton","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840072","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"SIM","PP":"SIM","STACK":"NÃO","OUTROS":"81"},
+{"PV":"NF","NOME":"E.LISBOA - FARO","EMP":"ENTREPOSTO","GESCOM":"ENTREPOSTO ALGARVE - FARO","MORADA":"Sitio dos Salgados, Apt. 426","CP":"8001-905 Faro","NIF":"501437479","ZONA":"Sul","DIST":"Faro","CONC":"Faro","STIE":"","ETIE":"SIM","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"Nio","M5":"Firefly","M6":"GAC - Aion","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"","PNEUS":"","EMP_EQ":"","PP":"","STACK":"","OUTROS":"L1"},
+{"PV":"NG","NOME":"E.LISBOA - GUIMARÃES","EMP":"ENTREPOSTO","GESCOM":"JAP3 - GUIMARÃES","MORADA":"Rua Joaquim Ribeiro Moura, nº1120","CP":"4835-015 Guimarães","NIF":"501437479","ZONA":"Norte","DIST":"Braga","CONC":"Guimarães","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Guimaraes JAP3","EMAIL":"arm.gmrn@grupojap.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"SIM","OUTROS":"21"},
+{"PV":"NP","NOME":"E.LISBOA - PORTO","EMP":"ENTREPOSTO","GESCOM":"Sem Morada em Gescom","MORADA":"Estrada da Circunvalação 10448","CP":"4460-383 Matosinhos","NIF":"501437479","ZONA":"Norte","DIST":"Porto","CONC":"Matosinhos","STIE":"","ETIE":"SIM","ALIAS":"Armazém Porto Carby E.Lisboa NP","EMAIL":"armazemnp.porto@grupojap.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"Nio","M5":"Firefly","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"NÃO","PP":"NÃO","STACK":"NÃO","OUTROS":""},
+{"PV":"NR","NOME":"E.LISBOA - PORTIMÃO","EMP":"ENTREPOSTO","GESCOM":"ENTREPOSTO ALGARVE - P. MOURINHA","MORADA":"Pedra Mourinha, Lote 12","CP":"8500-815 Portimão","NIF":"501437479","ZONA":"Sul","DIST":"Faro","CONC":"Portimão","STIE":"","ETIE":"","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840077","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"","PNEUS":"","EMP_EQ":"","PP":"","STACK":"","OUTROS":"L2"},
+{"PV":"NS","NOME":"E.LISBOA - SANTARÉM","EMP":"ENTREPOSTO","GESCOM":"SANTAGRI - SANTARÉM 1","MORADA":"Estrada Nacional 114 - Km 73,8","CP":"2005-002 Várzea de Santarém","NIF":"501437479","ZONA":"Centro","DIST":"Santarém","CONC":"Santarém","STIE":"","ETIE":"SIM","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"","PNEUS":"","EMP_EQ":"","PP":"","STACK":"","OUTROS":"C1, J4, S1"},
+{"PV":"NT","NOME":"E.LISBOA - TORRES VEDRAS","EMP":"ENTREPOSTO","GESCOM":"VESAUTO T. VEDRAS","MORADA":"Estrada Nacional nº 9","CP":"2560-250 Torres Vedras","NIF":"501437479","ZONA":"Centro","DIST":"Lisboa","CONC":"Torres Vedras","STIE":"","ETIE":"","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840075","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"","PNEUS":"","EMP_EQ":"","PP":"","STACK":"","OUTROS":"85"},
+{"PV":"NU","NOME":"E.LISBOA - TAGUS PARK","EMP":"ENTREPOSTO","GESCOM":"VESAUTO TAGUS","MORADA":"Estrada Nacional 249","CP":"2735-307 Cacém","NIF":"501437479","ZONA":"Centro","DIST":"Lisboa","CONC":"Sintra","STIE":"","ETIE":"","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840072","EMAIL_CA":"filipeveiga@carby.pt","COL":"","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"","PNEUS":"","EMP_EQ":"","PP":"","STACK":"","OUTROS":"86"},
+{"PV":"NV","NOME":"E.LISBOA - VILA REAL","EMP":"ENTREPOSTO","GESCOM":"JAP/JAP3 VILA REAL","MORADA":"Zona Industrial Constantim, Lt 152","CP":"5000-081 Vila Real","NIF":"501437479","ZONA":"Norte","DIST":"Vila Real","CONC":"Vila Real","STIE":"SIM","ETIE":"SIM","ALIAS":"","EMAIL":"arm.vrl@grupojap.pt","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Omoda","M2":"Jaecco","M3":"Foton","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"22, 8B"},
+{"PV":"R1","NOME":"CARBY MOTION - AVINTES","EMP":"CARBY MOTION","GESCOM":"EUROPAUTO AVINTES","MORADA":"Rua 5 de Outubro, Nº4584 (Piso Superior)","CP":"4430-809 Avintes","NIF":"501410171","ZONA":"Norte","DIST":"Porto","CONC":"Vila Nova de Gaia","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Avintes E.EUROPAUTO","EMAIL":"armazemr1@entreposto.pt","CONT_EXT":"","RESP":"Cândido Costa","EMAIL_RESP":"candidoc@carby.pt","CONT":"227860668","TIPO":"P-Concessão e Armazém Primário","M1":"Peugeot","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Ivo Pereira","EMAIL_RC":"ipereira@grupojap.pt","CONT_RC":"961580023","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":""},
+{"PV":"R2","NOME":"CARBY MOTION - FEIRA","EMP":"CARBY MOTION","GESCOM":"A.FONTES - FEIRA","MORADA":"Zona Industrial do Roligo","CP":"4520-115 Santa Maria da Feira","NIF":"501410171","ZONA":"Norte","DIST":"Aveiro","CONC":"Santa Maria da Feira","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Feira E.EUROPAUTO","EMAIL":"armazemr2@entreposto.pt","CONT_EXT":"","RESP":"Rui Manuel Ferreira","EMAIL_RESP":"rmferrei@carby.pt","CONT":"256331036","TIPO":"P-Concessão e Armazém Primário","M1":"Peugeot","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Ivo Pereira","EMAIL_RC":"ipereira@grupojap.pt","CONT_RC":"961580023","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":"K4"},
+{"PV":"R3","NOME":"CARBY MOTION - VFX","EMP":"CARBY MOTION","GESCOM":"EUROPAUTO VFX","MORADA":"Quinta das Areias, Lote 14","CP":"2600-660 Vila Franca de Xira","NIF":"501410171","ZONA":"Centro","DIST":"Lisboa","CONC":"Vila Franca de Xira","STIE":"SIM","ETIE":"SIM","ALIAS":"Armazem Carby V.Franca Xira R3","EMAIL":"armazemr3@grupojap.pt","CONT_EXT":"263280781","RESP":"Claudio Pinto","EMAIL_RESP":"claudio.ppinto@carby.pt","CONT":"924765127","TIPO":"","M1":"PEUGEOT","M2":"CITROEN","M3":"OPEL","M4":"FIAT","M5":"JEEP","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"S1","NOME":"CARBY MOTORS 2 - SANTARÉM 1","EMP":"CARBY MOTORS 2","GESCOM":"SANTAGRI - SANTARÉM 1","MORADA":"Estrada Nacional 114 - Km 73,8","CP":"2005-002 Várzea de Santarém","NIF":"500963401","ZONA":"Centro","DIST":"Santarém","CONC":"Santarém","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Santarem1 E.SANTAREM","EMAIL":"armazems1@entreposto.pt","CONT_EXT":"","RESP":"Paulo Colaço","EMAIL_RESP":"paulo.colaco@carby.pt","CONT":"910745515","TIPO":"P-Concessão e Armazém Primário","M1":"VW","M2":"Audi","M3":"Seat","M4":"Skoda","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Joao Paulo Aguiar","EMAIL_RC":"jpaguiar@entreposto.pt","CONT_RC":"919537491","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":"C1, J4, NS"},
+{"PV":"S4","NOME":"CARBY MOTORS 2 - FEIJÓ 2","EMP":"CARBY MOTORS 2","GESCOM":"ENTREPOSTO SETUBAL - FEIJO 2","MORADA":"Rua Joaquim Pires Jorge, nº28","CP":"2810-083 Feijó","NIF":"500963401","ZONA":"Centro","DIST":"Setúbal","CONC":"Almada","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Feijo2 E.SETUBAL","EMAIL":"armazemp2@entreposto.pt","CONT_EXT":"","RESP":"Ricardo Guimarães","EMAIL_RESP":"ricardog@carby.pt","CONT":"916183640","TIPO":"P-Concessão e Armazém Primário","M1":"VW","M2":"Audi","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"Joao Paulo Aguiar","EMAIL_RC":"jpaguiar@entreposto.pt","CONT_RC":"919537491","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"","STACK":"","OUTROS":""},
+{"PV":"S5","NOME":"CARBY MOTORS 2 - AVINTES","EMP":"CARBY MOTORS 2","GESCOM":"ROTOR - AVINTES","MORADA":"Trav. Emigrantes Nº133 (Piso Inferior)","CP":"4430-820 Avintes","NIF":"500963401","ZONA":"Norte","DIST":"Porto","CONC":"Vila Nova de Gaia","STIE":"SIM","ETIE":"SIM","ALIAS":"Arm Avintes E.ROTOR","EMAIL":"armazemu1@entreposto.pt","CONT_EXT":"","RESP":"Luís Moita","EMAIL_RESP":"lmoita@carby.pt","CONT":"226078146","TIPO":"P-Concessão e Armazém Primário","M1":"Nissan","M2":"Seat","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Filipe Veiga","CONT_CA":"931840071","EMAIL_CA":"filipeveiga@carby.pt","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"NÃO","PP":"SIM","STACK":"NÃO","OUTROS":""},
+{"PV":"PO","NOME":"Entreposto Viaturas Desportivas - DMS Porsche","EMP":"","GESCOM":"","MORADA":"","CP":"","NIF":"","ZONA":"Centro","DIST":"Lisboa","CONC":"Lisboa","STIE":"NÃO","ETIE":"NÃO","ALIAS":"","EMAIL":"","CONT_EXT":"","RESP":"","EMAIL_RESP":"","CONT":"","TIPO":"","M1":"Porsche","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Cristiano Ruão","CONT_CA":"","EMAIL_CA":"","COL":"SIM","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"SIM","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"SIM","PNEUS":"SIM","EMP_EQ":"","PP":"SIM","STACK":"","OUTROS":""},
+{"PV":"G1","NOME":"MATRIZAUTO - CDP - REBORDOSA","EMP":"MATRIZAUTO","GESCOM":"JAP PARTS CDP","MORADA":"Rua da Portela, nº 43 - Rebordosa","CP":"4585-497 Paredes","NIF":"","ZONA":"Norte","DIST":"Porto","CONC":"Paredes","STIE":"SIM","ETIE":"SIM","ALIAS":"CDP JAP Parts Norte","EMAIL":"armazemj1@japparts.pt","CONT_EXT":"","RESP":"Miguel Pinto","EMAIL_RESP":"miguel.pinto@carby.pt","CONT":"961592624","TIPO":"A-Armazém Central","M1":"GARD-X","M2":"","M3":"","M4":"","M5":"","M6":"","M7":"","M8":"","M9":"","CA":"Élio Pontes","CONT_CA":"961580107","EMAIL_CA":"epontes@grupojap.pt","COL":"NÃO","RC":"","EMAIL_RC":"","CONT_RC":"","MEC":"NÃO","RM":"","EMAIL_RM":"","CONT_RM":"","BAL":"NÃO","PNEUS":"NÃO","EMP_EQ":"SIM","PP":"SIM","STACK":"SIM","OUTROS":"8C, 95, 24, J1"}
+];
+
+// ── UTILITÁRIOS ───────────────────────────────────────────────────────────────
+function norm(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim(); }
+function getMarcas(r){ return [r.M1,r.M2,r.M3,r.M4,r.M5,r.M6,r.M7,r.M8,r.M9].filter(Boolean).join(", "); }
+function yn(v){
+  if(v==="SIM") return '<span class="yn-sim">SIM</span>';
+  if(v==="NÃO") return '<span class="yn-nao">NÃO</span>';
+  if(v) return '<span class="yn-nd">'+v+'</span>';
+  return '<span style="color:var(--text3)">—</span>';
+}
+function zonaBadge(z){
+  if(z==="Norte") return '<span class="zona-norte">Norte</span>';
+  if(z==="Centro") return '<span class="zona-centro">Centro</span>';
+  if(z==="Sul") return '<span class="zona-sul">Sul</span>';
+  return z?'<span class="zona-outro">'+z+'</span>':'<span style="color:var(--text3)">—</span>';
+}
+function fv(v,type){ 
+  if(!v) return '<span style="color:var(--text3)">—</span>';
+  if(type==='email' && v.includes('@') && !v.includes('#')) 
+    return `<a class="email-link" href="mailto:${v.trim()}">${v.trim()}</a>`;
+  return String(v);
+}
+function esc(s){ return String(s||"").replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
+
+// ── TEMA ──────────────────────────────────────────────────────────────────────
+let darkMode = false;
+function toggleTheme(){
+  darkMode=!darkMode;
+  document.body.classList.toggle("dark",darkMode);
+  document.getElementById("theme-btn").textContent=darkMode?"☀️":"🌙";
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg,color){
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.style.background=color||"#276749";
+  t.style.display="block";
+  setTimeout(()=>t.style.display="none",2800);
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(t){
+  ["pesquisa","bd"].forEach(id=>{
+    document.getElementById("tab-"+id).style.display=id===t?"block":"none";
+  });
+  document.querySelectorAll(".tab-btn").forEach((b,i)=>{
+    b.classList.toggle("active",["pesquisa","bd"][i]===t);
+  });
+  // Mostrar botões de configurações apenas na tab BD
+  const isBD = t==="bd";
+  const ssBtn=document.getElementById("ss-settings-btn");
+  const hBtn=document.getElementById("header-settings-btn");
+  if(ssBtn) ssBtn.style.display=isBD?"":"none";
+  if(hBtn) hBtn.style.display=isBD?"":"none";
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function rebuildFilters(){
+  // Recalcula todas as opções dos dropdowns a partir dos dados actuais do DB
+  const zonas=["Norte","Centro","Sul","Portugal","Internacional"];
+  const empresas=[...new Set(DB.map(r=>r.EMP).filter(Boolean))].sort();
+  const distritos=[...new Set(DB.map(r=>r.DIST).filter(Boolean))].sort();
+  const marcas=[...new Set(DB.flatMap(r=>[r.M1,r.M2,r.M3,r.M4,r.M5,r.M6,r.M7,r.M8,r.M9].filter(v=>v&&v.trim())))]
+    .map(m=>m.trim()).filter(Boolean).sort();
+  const tipos=[...new Set(DB.map(r=>r.TIPO).filter(Boolean))].sort();
+  const cas=[...new Set(DB.map(r=>r.CA).filter(v=>v&&v!=="N/D"))].sort();
+
+  const rebuildSelect=(id,arr,allLabel)=>{
+    const s=document.getElementById(id);
+    if(!s) return;
+    const cur=s.value; // preservar selecção actual
+    s.innerHTML=`<option value="">${allLabel}</option>`;
+    arr.forEach(v=>{ const o=document.createElement("option"); o.value=o.textContent=v; s.appendChild(o); });
+    if(arr.includes(cur)) s.value=cur; // restaurar se ainda existir
+  };
+  rebuildSelect("f-zona",zonas,"— Todas —");
+  rebuildSelect("f-empresa",empresas,"— Todas —");
+  rebuildSelect("f-distrito",distritos,"— Todos —");
+  rebuildSelect("f-marca",marcas,"— Todas —");
+  rebuildSelect("f-tipo",tipos,"— Todos —");
+  rebuildSelect("f-ca",cas,"— Todos —");
+}
+function init(){
+  // 1. Restaurar tema guardado
+  const savedTheme=localStorage.getItem(LS_KEY_THEME);
+  if(savedTheme==="dark"){ darkMode=true; document.body.classList.add("dark"); document.getElementById("theme-btn").textContent="☀️"; }
+
+  // 2. Carregar dados guardados localmente (offline fallback)
+  const localData=loadDBLocal();
+  if(localData){
+    DB=localData;
+    const ls=getLastSyncStr();
+    updateSyncStatusBar("warn",`Dados locais de: ${ls} — ${DB.length} registos. A sincronizar…`);
+  } else {
+    updateSyncStatusBar("spin","Sem dados locais. A carregar do SharePoint…");
+  }
+
+  // 3. Monitorizar estado da rede
+  function updateNetworkStatus(){
+    const banner=document.getElementById("offline-banner");
+    const ls=getLastSyncStr();
+    if(!navigator.onLine){
+      if(banner) banner.style.display="block";
+      updateSyncStatusBar("err","SEM REDE — "+(ls?`Dados de: ${ls}`:"Sem dados locais"));
+      document.getElementById("ss-sync-btn").style.display="none";
+    } else {
+      if(banner) banner.style.display="none";
+      document.getElementById("ss-sync-btn").style.display="";
+    }
+  }
+  window.addEventListener("online",  ()=>{ updateNetworkStatus(); syncTudo(); });
+  window.addEventListener("offline", updateNetworkStatus);
+  updateNetworkStatus();
+
+  // 4. Renderizar com dados disponíveis (locais ou base inicial)
+  rebuildFilters();
+  buildPvTableHeader();
+  renderPesquisa();
+  showTab("pesquisa");
+  initSpoPanel(); // inicializar links editáveis do painel SPO
+
+  // 5. Auto-sync no arranque (não bloqueante)
+  const s=getSettings();
+  if(s.autoSync!==false && navigator.onLine){
+    setTimeout(()=>syncTudo(), 800); // auto-sync silencioso ao arranque
+  } else if(!navigator.onLine && !localData){
+    showToast("⚠️ Sem rede e sem dados locais. Ligue-se à rede para carregar dados.","#742a2a");
+  }
+}
+
+// Guardar tema no localStorage quando muda
+const _origToggleTheme=window.toggleTheme;
+function toggleTheme(){
+  darkMode=!darkMode;
+  document.body.classList.toggle("dark",darkMode);
+  document.getElementById("theme-btn").textContent=darkMode?"☀️":"🌙";
+  try{ localStorage.setItem(LS_KEY_THEME, darkMode?"dark":"light"); }catch(e){}
+}
+
+// ── RENDER CARDS PV ───────────────────────────────────────────────────────────
+function renderPV(){
+  const q=norm(document.getElementById("pv-q").value);
+  const filtered=DB.filter(r=>!q||[r.PV,r.NOME,r.EMP,r.CP,r.CONC,r.DIST,r.MORADA].some(v=>norm(v).includes(q)));
+  const grid=document.getElementById("pv-grid");
+  const noRes=document.getElementById("pv-noresults");
+  const count=document.getElementById("pv-count");
+  grid.innerHTML="";
+  noRes.style.display=filtered.length?"none":"block";
+  count.textContent=filtered.length+" / "+DB.length+" PVs";
+  filtered.forEach(r=>{
+    const marcas=getMarcas(r);
+    const tags=marcas?marcas.split(", ").map(m=>`<span class="marca-tag">${m}</span>`).join(""):"";
+    const div=document.createElement("div");
+    div.className="pv-card";
+    div.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px">
+        <span class="pv-badge">${r.PV}</span>
+        ${zonaBadge(r.ZONA)}
+      </div>
+      <div class="pv-nome">${r.NOME}</div>
+      <div class="pv-emp">${r.EMP||""}</div>
+      <div class="pv-local">📍 ${r.CP||""}</div>
+      <div style="margin-top:6px">${tags}</div>`;
+    div.onclick=()=>openModal(r,false);
+    grid.appendChild(div);
+  });
+}
+
+// ── FILTROS PESQUISA ──────────────────────────────────────────────────────────
+function getFilters(){
+  return {
+    texto:norm(document.getElementById("f-texto").value),
+    zona:document.getElementById("f-zona").value,
+    empresa:document.getElementById("f-empresa").value,
+    distrito:document.getElementById("f-distrito").value,
+    marca:norm(document.getElementById("f-marca").value),
+    tipo:document.getElementById("f-tipo").value,
+    serveTie:document.getElementById("f-serveTie").value,
+    efetuaTie:document.getElementById("f-efetuaTie").value,
+    colisao:document.getElementById("f-colisao").value,
+    mecanica:document.getElementById("f-mecanica").value,
+    balcao:document.getElementById("f-balcao").value,
+    ca:document.getElementById("f-ca").value,
+  };
+}
+function clearFilters(){
+  document.getElementById("f-texto").value="";
+  ["f-zona","f-empresa","f-distrito","f-marca","f-tipo","f-serveTie","f-efetuaTie","f-colisao","f-mecanica","f-balcao","f-ca"]
+    .forEach(id=>document.getElementById(id).value="");
+  renderPesquisa();
+}
+function applyFilters(f){
+  return DB.filter(r=>{
+    if(f.texto){
+      const campos=[r.PV,r.NOME,r.EMP,r.MORADA,r.CP,r.CONC,r.DIST,r.RESP,r.EMAIL,r.CA,getMarcas(r),r.ALIAS,r.GESCOM,r.RC,r.RM];
+      if(!campos.some(v=>norm(v).includes(f.texto))) return false;
+    }
+    if(f.zona && norm(r.ZONA)!==norm(f.zona)) return false;
+    if(f.empresa && norm(r.EMP)!==norm(f.empresa)) return false;
+    if(f.distrito && norm(r.DIST)!==norm(f.distrito)) return false;
+    if(f.tipo && norm(r.TIPO)!==norm(f.tipo)) return false;
+    if(f.marca && ![r.M1,r.M2,r.M3,r.M4,r.M5,r.M6,r.M7,r.M8,r.M9].some(m=>norm(m).includes(f.marca))) return false;
+    if(f.serveTie && r.STIE!==f.serveTie) return false;
+    if(f.efetuaTie && r.ETIE!==f.efetuaTie) return false;
+    if(f.colisao && r.COL!==f.colisao) return false;
+    if(f.mecanica && r.MEC!==f.mecanica) return false;
+    if(f.balcao && r.BAL!==f.balcao) return false;
+    if(f.ca && norm(r.CA)!==norm(f.ca)) return false;
+    return true;
+  });
+}
+function renderPesquisa(){
+  const f=getFilters();
+  const res=applyFilters(f);
+  const tbody=document.getElementById("pesquisa-tbody");
+  const mobileWrap=document.getElementById("pesquisa-mobile");
+  const noRes=document.getElementById("pesquisa-noresults");
+  const count=document.getElementById("pesquisa-count");
+  tbody.innerHTML="";
+  mobileWrap.innerHTML="";
+  noRes.style.display=res.length?"none":"block";
+  count.innerHTML=`<strong>${res.length}</strong> PV(s) encontrado(s) de ${DB.length}`;
+
+  res.forEach((r,i)=>{
+    const marcas=getMarcas(r);
+    const tipo=(r.TIPO||"").replace(/^[A-Z][-–]/,"").trim()||"—";
+    const locStr=(r.DIST||"")+(r.CONC?" / "+r.CONC:"");
+    const emailLink=v=>v&&v.includes("@")&&!v.includes("#")?`<a class="email-link" href="mailto:${v.trim()}" onclick="event.stopPropagation()">${v.trim()}</a>`:(v||"—");
+    const uid="pv_"+i;
+
+    // ── DETAIL HTML (shared by both views) ──────────────────────────────────
+    // detailHTML: estrutura organizada em secções, classes wide para campos largos
+    const detailHTML=`
+      <div class="pv-mob-detail-grid">
+        <div class="det-section">📋 Localização & Identificação</div>
+        <div class="pv-mob-field wide"><div class="pml">Morada</div><div class="pmv">${r.MORADA||"—"}</div></div>
+        <div class="pv-mob-field"><div class="pml">Código Postal</div><div class="pmv">${r.CP||"—"}</div></div>
+        <div class="pv-mob-field"><div class="pml">NIF</div><div class="pmv">${r.NIF||"—"}</div></div>
+        <div class="pv-mob-field"><div class="pml">Nome Gescom</div><div class="pmv">${r.GESCOM||"—"}</div></div>
+        <div class="det-section">📞 Contactos do Armazém</div>
+        <div class="pv-mob-field"><div class="pml">Alias Email</div><div class="pmv">${r.ALIAS||"—"}</div></div>
+        <div class="pv-mob-field wide"><div class="pml">Email Armazém</div><div class="pmv">${emailLink(r.EMAIL)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Contacto/Ext.</div><div class="pmv">${r.CONT_EXT||"—"}</div></div>
+        <div class="pv-mob-field"><div class="pml">Responsável</div><div class="pmv">${r.RESP||"—"}</div></div>
+        <div class="pv-mob-field wide"><div class="pml">Email Responsável</div><div class="pmv">${emailLink(r.EMAIL_RESP)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Contacto Direto</div><div class="pmv">${r.CONT||"—"}</div></div>
+        <div class="det-section">👤 Coordenador de Armazém (CA)</div>
+        <div class="pv-mob-field"><div class="pml">Coord. CA</div><div class="pmv">${r.CA||"—"}</div></div>
+        <div class="pv-mob-field"><div class="pml">Contacto CA</div><div class="pmv">${r.CONT_CA||"—"}</div></div>
+        <div class="pv-mob-field wide"><div class="pml">Email CA</div><div class="pmv">${emailLink(r.EMAIL_CA)}</div></div>
+        ${r.COL==="SIM"?`
+        <div class="det-section">🔧 Colisão</div>
+        <div class="pv-mob-field"><div class="pml">Resp. Colisão (RC)</div><div class="pmv">${r.RC||"—"}</div></div>
+        <div class="pv-mob-field"><div class="pml">Contacto RC</div><div class="pmv">${r.CONT_RC||"—"}</div></div>
+        <div class="pv-mob-field wide"><div class="pml">Email RC</div><div class="pmv">${emailLink(r.EMAIL_RC)}</div></div>`:""}
+        ${r.MEC==="SIM"&&r.RM?`
+        <div class="det-section">⚙️ Mecânica</div>
+        <div class="pv-mob-field"><div class="pml">Resp. Mecânica (RM)</div><div class="pmv">${r.RM}</div></div>
+        <div class="pv-mob-field wide"><div class="pml">Email RM</div><div class="pmv">${emailLink(r.EMAIL_RM)}</div></div>`:""}
+        <div class="det-section">🏷️ Serviços & Equipamento</div>
+        <div class="pv-mob-field"><div class="pml">Serve TIE</div><div class="pmv">${yn(r.STIE)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Efetua TIE</div><div class="pmv">${yn(r.ETIE)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Colisão</div><div class="pmv">${yn(r.COL)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Mecânica</div><div class="pmv">${yn(r.MEC)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Balcão Peças</div><div class="pmv">${yn(r.BAL)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Máq. Pneus</div><div class="pmv">${yn(r.PNEUS)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Empilhador</div><div class="pmv">${yn(r.EMP_EQ)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Porta Paletes</div><div class="pmv">${yn(r.PP)}</div></div>
+        <div class="pv-mob-field"><div class="pml">Stacker</div><div class="pmv">${yn(r.STACK)}</div></div>
+        ${r.OUTROS?`<div class="pv-mob-field wide"><div class="pml">Outros PV mesmo local</div><div class="pmv">${r.OUTROS}</div></div>`:""}
+      </div>`;
+
+    // ── DESKTOP: tabela dinâmica com colunas configuráveis ──────────────────
+    const tr=document.createElement("tr");
+    tr.className="data-row";
+    tr.title="Clique para expandir / recolher dados detalhados";
+    // Primeira célula sempre: indicador de expansão + PV code
+    const expandCell=`<td style="white-space:nowrap"><b>${r.PV}</b> <span id="arr_${uid}" style="font-size:10px;color:var(--text3)">▶</span></td>`;
+    const dataCells=pvVisibleCols.map(k=>`<td>${getPvCellVal(r,k)}</td>`).join('');
+    tr.innerHTML=expandCell+dataCells;
+
+    const colSpan=pvVisibleCols.length+1; // +1 for expand cell
+    const dtr=document.createElement("tr");
+    dtr.className="detail-row";
+    dtr.id="det_"+uid;
+    dtr.style.display="none";
+    dtr.innerHTML=`<td colspan="${colSpan}" style="padding:14px 20px!important;background:var(--bg3)">${detailHTML}</td>`;
+
+    tr.onclick=()=>{
+      const det=document.getElementById("det_"+uid);
+      const arr=document.getElementById("arr_"+uid);
+      const opening=det.style.display==="none";
+      // Accordion: fechar todos os outros detalhes abertos primeiro
+      closeAllPvDetails(uid);
+      det.style.display=opening?"table-row":"none";
+      arr.textContent=opening?"▼":"▶";
+      arr.style.color=opening?"var(--accent)":"var(--text3)";
+      tr.style.background=opening?"var(--hover)":"";
+    };
+    tbody.appendChild(tr);
+    tbody.appendChild(dtr);
+
+    // ── MOBILE: cartão vertical ──────────────────────────────────────────────
+    const marcaTags=marcas?marcas.split(", ").map(m=>`<span class="marca-tag">${m}</span>`).join(""):"";
+    const card=document.createElement("div");
+    card.className="pv-mob-card";
+    card.innerHTML=`
+      <div class="pv-mob-header" onclick="toggleMobCard('mob_${uid}','mobarr_${uid}')">
+        <div class="pv-mob-left">
+          <div class="pv-mob-pv">
+            <span style="background:var(--bg3);border:1px solid var(--border);padding:1px 7px;border-radius:5px;font-size:11px;font-weight:800">${r.PV}</span>
+            ${zonaBadge(r.ZONA)}
+          </div>
+          <div class="pv-mob-nome">${r.NOME}</div>
+          <div class="pv-mob-emp">${r.EMP||""}</div>
+          <div class="pv-mob-loc">📍 ${r.CP||""} ${locStr?("· "+locStr):""}</div>
+          <div class="pv-mob-badges">
+            ${marcaTags}
+            <span style="margin-left:2px">${yn(r.COL)}</span>
+            <span>${yn(r.MEC)}</span>
+            <span>${yn(r.BAL)}</span>
+          </div>
+        </div>
+        <span class="pv-mob-arrow" id="mobarr_${uid}">▶</span>
+      </div>
+      <div class="pv-mob-detail" id="mob_${uid}">${detailHTML}</div>`;
+    mobileWrap.appendChild(card);
+  });
+}
+
+function toggleMobCard(detId, arrId){
+  const det=document.getElementById(detId);
+  const arr=document.getElementById(arrId);
+  const opening=!det.classList.contains("open");
+  // Accordion: fechar todos os outros cartões móveis abertos
+  if(opening){
+    document.querySelectorAll(".pv-mob-detail.open").forEach(d=>{
+      if(d.id!==detId){
+        d.classList.remove("open");
+        const a=document.getElementById(d.id.replace("mob_","mobarr_"));
+        if(a){ a.textContent="▶"; a.classList.remove("open"); }
+      }
+    });
+  }
+  det.classList.toggle("open", opening);
+  arr.textContent=opening?"▼":"▶";
+  arr.classList.toggle("open", opening);
+}
+
+// Fecha todos os detalhes desktop abertos excepto o indicado (uid)
+function closeAllPvDetails(exceptUid){
+  document.querySelectorAll("tr.detail-row").forEach(dtr=>{
+    if(dtr.style.display!=="none" && dtr.id!=="det_"+exceptUid){
+      dtr.style.display="none";
+      // Reset arrow e background na linha principal
+      const uid=dtr.id.replace("det_","");
+      const arrEl=document.getElementById("arr_"+uid);
+      if(arrEl){ arrEl.textContent="▶"; arrEl.style.color="var(--text3)"; }
+      if(dtr.previousElementSibling) dtr.previousElementSibling.style.background="";
+    }
+  });
+}
+
+// ── LOGIN / BD ────────────────────────────────────────────────────────────────
+function doLogin(){
+  const pw=document.getElementById("pw-input").value;
+  const err=document.getElementById("pw-err");
+  if(pw===PASSWORD){
+    document.getElementById("login-screen").style.display="none";
+    document.getElementById("bd-content").style.display="block";
+    renderBD();
+  } else {
+    err.style.display="block";
+    document.getElementById("pw-input").value="";
+    setTimeout(()=>err.style.display="none",3000);
+  }
+}
+function lockBD(){
+  document.getElementById("bd-content").style.display="none";
+  document.getElementById("login-screen").style.display="flex";
+  document.getElementById("pw-input").value="";
+  showTab("pesquisa"); // redirecionar para Pesquisa PV após bloquear
+  showToast("🔒 BD Armazéns bloqueada — regressou à Pesquisa PV","#553c9a");
+}
+// ── LIMPAR FILTRO BD ──────────────────────────────────────────────────────────
+function clearBDFilter(){
+  document.getElementById("bd-q").value="";
+  renderBD();
+}
+
+// ── SYNC SHAREPOINT DIRETO ───────────────────────────────────────────────────
+// Nota: browsers bloqueiam fetch cross-origin sem CORS headers do servidor SharePoint.
+// O download directo só funciona se o SharePoint da empresa estiver configurado para
+// permitir acesso anónimo ou se o utilizador já tiver sessão activa no mesmo browser.
+
+
+// ── PESQUISA PV COLUMN CONFIG ─────────────────────────────────────────────────
+const PV_COLS=[
+  {key:"PV",     label:"PV",               def:true,  tooltip:"Código do Ponto de Venda"},
+  {key:"NOME",   label:"Nome Autoline",     def:true,  tooltip:"Nome completo do armazém"},
+  {key:"EMP",    label:"Empresa",           def:true,  tooltip:"Empresa do Grupo JAP"},
+  {key:"LOCSTR", label:"Distrito/Concelho", def:true,  tooltip:"Distrito e Concelho"},
+  {key:"ZONA",   label:"Zona",              def:true,  tooltip:"Zona geográfica"},
+  {key:"TIPO",   label:"Tipo",              def:true,  tooltip:"Tipo de armazém"},
+  {key:"MARCAS", label:"Marcas (todas)",    def:true,  tooltip:"Todas as marcas (M1 a M9 agrupadas)"},
+  {key:"STIE",   label:"Serve TIE",         def:true,  tooltip:"Este PV recebe TIE"},
+  {key:"ETIE",   label:"Efetua TIE",        def:true,  tooltip:"Este PV realiza TIE"},
+  {key:"COL",    label:"Colisão",           def:true,  tooltip:"Serviço de colisão"},
+  {key:"MEC",    label:"Mecânica",          def:true,  tooltip:"Serviço de mecânica"},
+  {key:"BAL",    label:"Balcão",            def:true,  tooltip:"Balcão de peças"},
+  {key:"CP",     label:"Cód. Postal",       def:false, tooltip:"Código postal e localidade"},
+  {key:"DIST",   label:"Distrito",          def:false, tooltip:"Distrito"},
+  {key:"CONC",   label:"Concelho",          def:false, tooltip:"Concelho"},
+  {key:"RESP",   label:"Responsável",       def:false, tooltip:"Responsável de armazém"},
+  {key:"EMAIL",  label:"Email Armazém",     def:false, tooltip:"Email do armazém"},
+  {key:"CONT_EXT",label:"Contacto/Ext.",    def:false, tooltip:"Contacto e extensão"},
+  {key:"CA",     label:"Coordenador CA",    def:false, tooltip:"Coordenador de armazém"},
+  {key:"PNEUS",  label:"Máq. Pneus",        def:false, tooltip:"Máquina de montagem de pneus"},
+  {key:"EMP_EQ", label:"Empilhador",        def:false, tooltip:"Empilhador disponível"},
+  {key:"PP",     label:"Porta Paletes",     def:false, tooltip:"Porta paletes disponível"},
+  {key:"STACK",  label:"Stacker",           def:false, tooltip:"Stacker com elevação"},
+];
+let pvVisibleCols=PV_COLS.filter(c=>c.def).map(c=>c.key);
+
+function togglePvColSelector(){
+  const p=document.getElementById("pv-col-panel");
+  if(p.style.display==="none"){
+    buildPvColCheckboxes();
+    p.style.display="block";
+  } else {
+    applyPvColSelection();
+    p.style.display="none";
+  }
+}
+function buildPvColCheckboxes(){
+  const div=document.getElementById("pv-col-checkboxes");
+  div.innerHTML=PV_COLS.map(c=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;padding:3px 0" title="${c.tooltip}">
+      <input type="checkbox" id="pvchk-${c.key}" ${pvVisibleCols.includes(c.key)?'checked':''} style="cursor:pointer">
+      ${c.label}
+    </label>`).join('');
+}
+function selectAllPvCols(val){
+  PV_COLS.forEach(c=>{ const el=document.getElementById("pvchk-"+c.key); if(el) el.checked=val; });
+}
+function applyPvColSelection(){
+  pvVisibleCols=PV_COLS.filter(c=>{ const el=document.getElementById("pvchk-"+c.key); return el&&el.checked; }).map(c=>c.key);
+  // Re-render desktop table header
+  buildPvTableHeader();
+  renderPesquisa();
+}
+function buildPvTableHeader(){
+  const thead=document.querySelector("#pesquisa-table thead tr");
+  if(!thead) return;
+  thead.innerHTML=pvVisibleCols.map(k=>{
+    const col=PV_COLS.find(c=>c.key===k);
+    return `<th title="${col?col.tooltip:k}">${col?col.label:k}</th>`;
+  }).join('');
+  // Add extra th for the expand arrow column
+  thead.innerHTML=`<th title="Clique na linha para expandir detalhes"></th>`+thead.innerHTML;
+}
+function getPvCellVal(r,key){
+  switch(key){
+    case "ZONA":   return zonaBadge(r.ZONA);
+    case "MARCAS": return `<span style="font-size:11px;color:var(--norte-c)">${getMarcas(r)||"—"}</span>`;
+    case "LOCSTR": return `<span style="font-size:11px">${r.DIST||""}${r.CONC?" / "+r.CONC:""}</span>`;
+    case "TIPO":   return `<span style="font-size:11px">${(r.TIPO||"").replace(/^[A-Z][-\u2013]/,"").trim()||"—"}</span>`;
+    case "STIE": case "ETIE": case "COL": case "MEC": case "BAL":
+    case "PNEUS": case "EMP_EQ": case "PP": case "STACK":
+      return yn(r[key]);
+    case "EMAIL": {
+      const v=r.EMAIL||"";
+      return v&&v.includes("@")?`<a class="email-link" href="mailto:${v.trim()}" onclick="event.stopPropagation()">${v.trim()}</a>`:"—";
+    }
+    default:
+      return `<span style="${['NOME'].includes(key)?'font-weight:600;white-space:nowrap':'font-size:11px;white-space:nowrap'}">${r[key]||"—"}</span>`;
+  }
+}
+const BD_COLS = [
+  {key:"PV",label:"PV",def:true},
+  {key:"NOME",label:"Nome Autoline",def:true},
+  {key:"EMP",label:"Empresa",def:true},
+  {key:"MORADA",label:"Morada",def:true},
+  {key:"CP",label:"Cód. Postal",def:true},
+  {key:"ZONA",label:"Zona",def:true},
+  {key:"DIST",label:"Distrito",def:true},
+  {key:"CONC",label:"Concelho",def:true},
+  {key:"STIE",label:"Serve TIE",def:true},
+  {key:"ETIE",label:"Efetua TIE",def:true},
+  {key:"ALIAS",label:"Alias Email",def:true},
+  {key:"EMAIL",label:"Email Armazém",def:true},
+  {key:"CONT_EXT",label:"Contacto/Ext.",def:true},
+  {key:"RESP",label:"Responsável",def:true},
+  {key:"EMAIL_RESP",label:"Email Resp.",def:false},
+  {key:"CONT",label:"Contacto Direto",def:false},
+  {key:"NIF",label:"NIF",def:false},
+  {key:"GESCOM",label:"Nome Gescom",def:false},
+  {key:"TIPO",label:"Tipo Armazém",def:true},
+  {key:"M1",label:"Marca 1",def:false},
+  {key:"M2",label:"Marca 2",def:false},
+  {key:"M3",label:"Marca 3",def:false},
+  {key:"MARCAS",label:"Marcas (todas)",def:true},
+  {key:"CA",label:"Coord. Armazém CA",def:true},
+  {key:"CONT_CA",label:"Contacto CA",def:false},
+  {key:"EMAIL_CA",label:"Email CA",def:false},
+  {key:"COL",label:"Colisão",def:true},
+  {key:"RC",label:"Resp. Colisão",def:false},
+  {key:"EMAIL_RC",label:"Email RC",def:false},
+  {key:"CONT_RC",label:"Contacto RC",def:false},
+  {key:"MEC",label:"Mecânica",def:true},
+  {key:"RM",label:"Resp. Mecânica",def:false},
+  {key:"EMAIL_RM",label:"Email RM",def:false},
+  {key:"BAL",label:"Balcão Peças",def:true},
+  {key:"PNEUS",label:"Máq. Pneus",def:false},
+  {key:"EMP_EQ",label:"Empilhador",def:false},
+  {key:"PP",label:"Porta Paletes",def:false},
+  {key:"STACK",label:"Stacker",def:false},
+  {key:"OUTROS",label:"Outros PV local",def:false},
+];
+let visibleCols = BD_COLS.filter(c=>c.def).map(c=>c.key);
+
+function toggleColSelector(){
+  const p=document.getElementById("col-panel");
+  if(p.style.display==="none"){
+    buildColCheckboxes();
+    p.style.display="block";
+  } else {
+    applyColSelection();
+    p.style.display="none";
+  }
+}
+function buildColCheckboxes(){
+  const div=document.getElementById("col-checkboxes");
+  div.innerHTML=BD_COLS.map(c=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;padding:3px 0">
+      <input type="checkbox" id="chk-${c.key}" ${visibleCols.includes(c.key)?'checked':''} style="cursor:pointer">
+      ${c.label}
+    </label>`).join('');
+}
+function selectAllCols(val){
+  BD_COLS.forEach(c=>{ const el=document.getElementById("chk-"+c.key); if(el) el.checked=val; });
+}
+function applyColSelection(){
+  visibleCols=BD_COLS.filter(c=>{ const el=document.getElementById("chk-"+c.key); return el&&el.checked; }).map(c=>c.key);
+  renderBD();
+}
+function getBDCellVal(r,key){
+  if(key==="MARCAS") return getMarcas(r)||"—";
+  const v=r[key]||"";
+  if(!v) return '<span style="color:var(--text3)">—</span>';
+  if(key==="ZONA") return zonaBadge(r.ZONA);
+  if(["STIE","ETIE","COL","MEC","BAL","PNEUS","EMP_EQ","PP","STACK"].includes(key)) return yn(v);
+  if(["EMAIL","EMAIL_RESP","EMAIL_RC","EMAIL_RM","EMAIL_CA"].includes(key) && v.includes("@"))
+    return `<a class="email-link" href="mailto:${v.trim()}">${v.trim()}</a>`;
+  if(key==="TIPO") return v.replace(/^[A-Z][-–]/,"").trim()||v;
+  return v;
+}
+function renderBD(){
+  const q=norm(document.getElementById("bd-q").value);
+  const filtered=DB.filter(r=>!q||Object.values(r).some(v=>norm(v).includes(q)));
+  const tbody=document.getElementById("bd-tbody");
+  const hrow=document.getElementById("bd-header-row");
+  const count=document.getElementById("bd-count");
+  // Build header
+  hrow.innerHTML=visibleCols.map(k=>{
+    const col=BD_COLS.find(c=>c.key===k);
+    return `<th>${col?col.label:k}</th>`;
+  }).join('');
+  tbody.innerHTML="";
+  count.textContent=filtered.length+"/"+DB.length+" registos";
+  filtered.forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.className="data-row";
+    tr.innerHTML=visibleCols.map(k=>`<td style="white-space:nowrap;font-size:12px">${getBDCellVal(r,k)}</td>`).join('');
+    tr.onclick=()=>openModal(r,true);
+    tbody.appendChild(tr);
+  });
+}
+
+// ── MODAL VIEW / EDIT ─────────────────────────────────────────────────────────
+let currentPV=null;
+let editMode=false;
+
+function openModal(r,allowEdit){
+  currentPV=r;
+  editMode=false;
+  renderModal(r,allowEdit,false);
+  document.getElementById("overlay").classList.add("open");
+}
+function closeModal(){
+  document.getElementById("overlay").classList.remove("open");
+  currentPV=null;
+  editMode=false;
+}
+
+function renderModal(r,allowEdit,isEdit){
+  const marcas=getMarcas(r);
+  const simNaoOpts=(val)=>['','SIM','NÃO','N/D'].map(v=>`<option value="${v}" ${v===val?'selected':''}>${v||'— n/d —'}</option>`).join('');
+
+  const field=(label,key,wide,type)=>{
+    if(isEdit){
+      return `<div${wide?' style="grid-column:1/-1"':''}>
+        <div class="field-label">${label}</div>
+        <input class="edit-input" id="ef-${key}" value="${esc(r[key])}" placeholder="${label}">
+      </div>`;
+    }
+    return `<div${wide?' style="grid-column:1/-1"':''}>
+      <div class="field-label">${label}</div>
+      <div class="field-val">${fv(r[key],type)}</div>
+    </div>`;
+  };
+  const fieldSel=(label,key)=>{
+    if(isEdit){
+      return `<div><div class="field-label">${label}</div>
+        <select class="edit-select" id="ef-${key}">${simNaoOpts(r[key])}</select>
+      </div>`;
+    }
+    return `<div><div class="field-label">${label}</div><div class="field-val">${yn(r[key])}</div></div>`;
+  };
+  const tipoOpts=['','P-Concessão e Armazém Primário','S-Concessão e Armazém Secundário','A-Armazém Central','O-Oficina Grupo','# Armazém NÃO Físico #']
+    .map(v=>`<option value="${v}" ${v===r.TIPO?'selected':''}>${v||'— selecionar —'}</option>`).join('');
+  const zonaOpts=['Norte','Centro','Sul','Portugal','Internacional']
+    .map(v=>`<option value="${v}" ${v===r.ZONA?'selected':''}>${v}</option>`).join('');
+
+  let btns='';
+  if(allowEdit){
+    if(isEdit){
+      btns=`<div class="modal-btns">
+        <button class="save-btn" onclick="saveEdit()">💾 Guardar Alterações</button>
+        <button class="cancel-edit-btn" onclick="cancelEdit()">Cancelar</button>
+      </div>`;
+    } else {
+      btns=`<div class="modal-btns">
+        <button class="edit-btn" onclick="startEdit()">✏️ Editar Registo</button>
+        <button class="close-btn" onclick="closeModal()">✕ Fechar</button>
+      </div>`;
+    }
+  } else {
+    btns=`<div class="modal-btns"><button class="close-btn" onclick="closeModal()">✕ Fechar</button></div>`;
+  }
+
+  document.getElementById("modal").innerHTML=`
+    <div class="modal-top">
+      <div>
+        <div class="modal-pv-id">PV ${r.PV}</div>
+        <div class="modal-title">${r.NOME}</div>
+        <div class="modal-sub">${r.EMP||""}</div>
+      </div>
+      ${btns}
+    </div>
+    ${isEdit?'<div class="edit-notice">✏️ Modo de edição activo — altere os campos e clique em <strong>Guardar Alterações</strong></div>':""}
+
+    <div class="sec">
+      <div class="sec-title">📋 Identificação</div>
+      <div class="grid2">
+        ${field("PV (Autoline)","PV")}
+        ${field("Empresa Grupo JAP","EMP")}
+        ${field("Nome Autoline","NOME",true)}
+        ${field("Nome Gescom","GESCOM")}
+        <div>
+          <div class="field-label">Tipo Armazém</div>
+          ${isEdit?`<select class="edit-select" id="ef-TIPO">${tipoOpts}</select>`:`<div class="field-val">${fv(r.TIPO)}</div>`}
+        </div>
+        ${field("NIF","NIF")}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">🗺️ Localização</div>
+      <div class="grid2">
+        ${field("Morada","MORADA",true)}
+        ${field("Código Postal / Localidade","CP")}
+        ${field("Distrito","DIST")}
+        ${field("Concelho","CONC")}
+        <div>
+          <div class="field-label">Zona</div>
+          ${isEdit?`<select class="edit-select" id="ef-ZONA">${zonaOpts}</select>`:zonaBadge(r.ZONA)}
+        </div>
+        ${field("Outros PV mesmo local","OUTROS")}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">📞 Contactos do Armazém</div>
+      <div class="grid2">
+        ${field("Nome ALIAS Email","ALIAS")}
+        ${field("Email Armazém","EMAIL",false,'email')}
+        ${field("Contacto / Extensão","CONT_EXT")}
+        ${field("Responsável de Armazém","RESP")}
+        ${field("Email Responsável","EMAIL_RESP",false,'email')}
+        ${field("Contacto Direto","CONT")}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">🏷️ Marcas & TIE</div>
+      <div class="grid2">
+        <div style="grid-column:1/-1">
+          <div class="field-label">Marcas (M1 a M9)</div>
+          ${isEdit?`<div class="grid2" style="margin-top:4px">
+            ${['M1','M2','M3','M4','M5','M6','M7','M8','M9'].map(k=>`<input class="edit-input" id="ef-${k}" value="${esc(r[k])}" placeholder="${k}">`).join('')}
+          </div>`:`<div class="field-val">${marcas||"—"}</div>`}
+        </div>
+        ${fieldSel("Serve TIE","STIE")}
+        ${fieldSel("Efetua TIE","ETIE")}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">🔧 Serviços & Equipamento</div>
+      <div class="grid2">
+        ${fieldSel("Colisão","COL")}
+        ${fieldSel("Mecânica","MEC")}
+        ${fieldSel("Balcão de Peças","BAL")}
+        ${fieldSel("Máq. Mont.Pneus","PNEUS")}
+        ${fieldSel("Empilhador","EMP_EQ")}
+        ${fieldSel("Porta Paletes","PP")}
+        ${fieldSel("Stacker c/Elevação","STACK")}
+      </div>
+      <div class="grid2" style="margin-top:12px">
+        ${field("Resp. Colisão (RC)","RC")}
+        ${field("Email RC","EMAIL_RC",false,'email')}
+        ${field("Contacto RC","CONT_RC")}
+        ${field("Resp. Mecânica (RM)","RM")}
+        ${field("Email RM","EMAIL_RM",false,'email')}
+        ${field("Contacto RM","CONT_RM")}
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">👤 Coordenador de Armazém (CA)</div>
+      <div class="grid2">
+        ${field("Nome CA","CA")}
+        ${field("Email CA","EMAIL_CA",false,'email')}
+        ${field("Contacto CA","CONT_CA")}
+      </div>
+    </div>
+    ${isEdit?`<div style="display:flex;gap:10px;margin-top:6px">
+      <button class="save-btn" style="flex:1" onclick="saveEdit()">💾 Guardar Alterações</button>
+      <button class="cancel-edit-btn" style="flex:1" onclick="cancelEdit()">✕ Cancelar Edição</button>
+    </div>`:""}
+  `;
+  document.getElementById("modal")._allowEdit=allowEdit;
+}
+
+function startEdit(){
+  editMode=true;
+  renderModal(currentPV,true,true);
+}
+function cancelEdit(){
+  editMode=false;
+  renderModal(currentPV,true,false);
+}
+function saveEdit(){
+  const keys=["PV","NOME","EMP","GESCOM","MORADA","CP","NIF","DIST","CONC","OUTROS",
+    "ALIAS","EMAIL","CONT_EXT","RESP","EMAIL_RESP","CONT",
+    "M1","M2","M3","M4","M5","M6","M7","M8","M9",
+    "STIE","ETIE","COL","MEC","BAL","PNEUS","EMP_EQ","PP","STACK",
+    "RC","EMAIL_RC","CONT_RC","RM","EMAIL_RM","CONT_RM","CA","EMAIL_CA","CONT_CA","TIPO","ZONA"];
+
+  keys.forEach(k=>{
+    const el=document.getElementById("ef-"+k);
+    if(el) currentPV[k]=(el.tagName==="SELECT"?el.value:el.value.trim());
+  });
+  // Update in DB array
+  const idx=DB.findIndex(r=>r.PV===currentPV.PV);
+  if(idx>=0) DB[idx]=Object.assign({},currentPV);
+
+  editMode=false;
+  renderModal(currentPV,true,false);
+  rebuildFilters();      // marcas ou outros campos podem ter mudado
+  renderBD();
+  renderPesquisa();
+  showToast("✓ Registo PV "+currentPV.PV+" atualizado com sucesso!");
+}
+
+// ── IMPRESSÃO ────────────────────────────────────────────────────────────────
+// ── GERAR PDF ─────────────────────────────────────────────────────────────────
+// Abre janela nova com HTML completo construído a partir dos dados JS actuais.
+// Respeita filtros activos e colunas visíveis. Imprime em A4 Horizontal.
+function gerarPDF(origem){
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit",year:"numeric"})
+    + " às " + now.toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
+
+  let titulo, subtitulo, colDefs, dataRows;
+
+  if(origem === "pesquisa"){
+    const f = getFilters();
+    dataRows = applyFilters(f);
+    colDefs  = pvVisibleCols.map(k => PV_COLS.find(c => c.key===k)).filter(Boolean);
+    const filtrosDesc = Object.entries(f).filter(([,v])=>v).map(([,v])=>v).join(" | ");
+    titulo    = "Grupo JAP — Pesquisa PV";
+    subtitulo = dataRows.length + " registo(s)"
+      + (filtrosDesc ? " · Filtros activos: " + filtrosDesc : " · Sem filtros activos")
+      + " · " + colDefs.length + " coluna(s)";
+  } else {
+    const q = norm((document.getElementById("bd-q")||{}).value||"");
+    dataRows = DB.filter(r => !q || Object.values(r).some(v => norm(v).includes(q)));
+    colDefs  = visibleCols.map(k => BD_COLS.find(c => c.key===k)).filter(Boolean);
+    titulo    = "Grupo JAP — BD Armazéns";
+    subtitulo = dataRows.length + " registo(s)"
+      + (q ? " · Filtro: \"" + q + "\"" : " · Sem filtros activos")
+      + " · " + colDefs.length + " coluna(s)";
+  }
+
+  function ynSpan(v){
+    const c={"SIM":["#d1fae5","#065f46"],"NÃO":["#fee2e2","#991b1b"],"N/D":["#f1f5f9","#64748b"]};
+    const [bg,fg]=c[v]||["#f1f5f9","#64748b"];
+    return `<span style="background:${bg};color:${fg};border-radius:3px;padding:1px 5px;font-size:6pt;font-weight:700">${v||"—"}</span>`;
+  }
+  function zonaSpan(v){
+    const c={"Norte":["#dbeafe","#1e40af"],"Centro":["#ede9fe","#5b21b6"],"Sul":["#dcfce7","#166534"],"Portugal":["#fef9c3","#854d0e"],"Internacional":["#f1f5f9","#475569"]};
+    const [bg,fg]=c[v]||["#f1f5f9","#475569"];
+    return v?`<span style="background:${bg};color:${fg};border-radius:3px;padding:1px 5px;font-size:6pt;font-weight:700">${v}</span>`:"—";
+  }
+  function marcaSpans(r){
+    const m=[r.M1,r.M2,r.M3,r.M4,r.M5,r.M6,r.M7,r.M8,r.M9].filter(x=>x&&x.trim());
+    return m.length?m.map(x=>`<span style="background:#dbeafe;color:#1e40af;border-radius:3px;padding:0 3px;font-size:6pt;margin-right:2px">${x}</span>`).join(""):"—";
+  }
+  function cellHtml(r,key){
+    switch(key){
+      case "MARCAS":  return marcaSpans(r);
+      case "LOCSTR":  return ((r.DIST||"")+(r.CONC?" / "+r.CONC:""))||"—";
+      case "TIPO":    return (r.TIPO||"").replace(/^[A-Z][-–]/,"").trim()||"—";
+      case "ZONA":    return zonaSpan(r.ZONA);
+      case "STIE": case "ETIE": case "COL": case "MEC": case "BAL":
+      case "PNEUS":  case "EMP_EQ": case "PP": case "STACK":
+        return ynSpan(r[key]);
+      case "EMAIL": case "EMAIL_RESP": case "EMAIL_CA": case "EMAIL_RC": case "EMAIL_RM":{
+        const v=r[key]||""; return v&&v.includes("@")?`<a href="mailto:${v}" style="color:#1e40af">${v}</a>`:(v||"—");
+      }
+      default: return r[key]?String(r[key]).replace(/&/g,"&amp;").replace(/</g,"&lt;"):"—";
+    }
+  }
+
+  const theadHtml = colDefs.map(c=>`<th>${c.label}</th>`).join("");
+  const tbodyHtml = dataRows.map(r=>
+    `<tr>${colDefs.map(c=>`<td>${cellHtml(r,c.key)}</td>`).join("")}</tr>`
+  ).join("");
+
+  const esc = s => s.replace(/"/g,"'");
+  const html = `<!DOCTYPE html>
+<html lang="pt"><head><meta charset="UTF-8">
+<title>${titulo}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+@page{
+  size:A4 landscape;
+  margin:14mm 8mm 14mm 8mm;
+}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:7.5pt;color:#1a202c;background:white}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;
+    border-bottom:2px solid #c53030;padding-bottom:5px;margin-bottom:7px}
+.ph h1{font-size:10.5pt;font-weight:900;color:#c53030;margin-bottom:2px}
+.ph .sub{font-size:6.5pt;color:#555}
+.ph .dt{font-size:6.5pt;color:#888;text-align:right;white-space:nowrap;padding-left:12px}
+table{width:100%;border-collapse:collapse;table-layout:auto;page-break-inside:auto}
+thead{display:table-header-group}
+tbody tr{page-break-inside:avoid}
+th{background:#d8e4f0;color:#1a202c;padding:3px 4px;font-size:6.5pt;font-weight:700;
+   border:1px solid #9bb;text-align:left;white-space:normal;word-break:break-word}
+td{padding:3px 4px;border:1px solid #ddd;font-size:7pt;color:#1a202c;
+   vertical-align:middle;word-break:break-word}
+tr:nth-child(even) td{background:#f8fafc}
+.pf{border-top:1px solid #ccc;margin-top:8px;padding-top:4px;
+    font-size:6.5pt;color:#999;text-align:center}
+/* Paginação nos cabeçalhos/rodapés de página via CSS Paged Media */
+</style>
+</head><body>
+<div class="ph">
+  <div><h1>${titulo}</h1><div class="sub">${subtitulo}</div></div>
+  <div class="dt">Gerado em: ${dateStr}</div>
+</div>
+<table>
+<thead><tr>${theadHtml}</tr></thead>
+<tbody>${tbodyHtml}</tbody>
+</table>
+<div class="pf">Grupo JAP — Gestão de Armazéns &nbsp;·&nbsp; Élio Pontes · epontes@grupojap.pt</div>
+<script>window.onload=function(){setTimeout(function(){window.print();},400)};<\/script>
+</body></html>`;
+
+  const win=window.open("","_blank","width=1200,height=800,scrollbars=yes");
+  if(!win){showToast("⚠️ Popup bloqueado — permita popups e tente novamente","#742a2a");return;}
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+}
+
+function getActivePvColCount(){ return pvVisibleCols.length; }
+function printPesquisa(){ gerarPDF("pesquisa"); }
+
+// ── START ─────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded",init);
+function openFeedback(){ document.getElementById("fb-overlay").classList.add("open"); }
+function closeFeedback(){ document.getElementById("fb-overlay").classList.remove("open"); }
+function sendFeedback(){
+  const tipo=document.getElementById("fb-tipo").value;
+  const pv=document.getElementById("fb-pv").value.trim();
+  const desc=document.getElementById("fb-desc").value.trim();
+  if(!desc){ document.getElementById("fb-desc").focus(); return; }
+  const subject=encodeURIComponent(`[JAP APP] ${tipo}${pv?" — "+pv:""}`);
+  const body=encodeURIComponent(
+    `Tipo: ${tipo}\n`+
+    (pv?`PV / Armazém: ${pv}\n`:"")+
+    `\nDescrição:\n${desc}\n\n---\nEnviado pela APP Grupo JAP — Gestão de Armazéns`
+  );
+  window.location.href=`mailto:epontes@grupojap.pt?subject=${subject}&body=${body}`;
+  closeFeedback();
+  document.getElementById("fb-desc").value="";
+  document.getElementById("fb-pv").value="";
+}
+
+// ── CONFIGURAÇÕES & LOCALSTORAGE ──────────────────────────────────────────────
+const LS_KEY_DB      = "jap_db_v10";
+const LS_KEY_META    = "jap_meta_v10";       // { lastSync, srcType, listUrl, excelUrl, autoSync, saveLocal }
+const LS_KEY_THEME   = "jap_theme_v10";
+
+function getSettings(){
+  try{ return JSON.parse(localStorage.getItem(LS_KEY_META)||"{}"); }catch(e){ return {}; }
+}
+function saveSettingsObj(obj){
+  try{ localStorage.setItem(LS_KEY_META, JSON.stringify(obj)); }catch(e){}
+}
+function saveDBLocal(data){
+  try{
+    const meta=getSettings();
+    if(meta.saveLocal===false) return;
+    localStorage.setItem(LS_KEY_DB, JSON.stringify(data));
+    const now=new Date().toISOString();
+    saveSettingsObj({...meta, lastSync:now});
+  }catch(e){ console.warn("LocalStorage save failed:", e.message); }
+}
+function loadDBLocal(){
+  try{
+    const raw=localStorage.getItem(LS_KEY_DB);
+    if(!raw) return null;
+    const data=JSON.parse(raw);
+    return Array.isArray(data)&&data.length>0 ? data : null;
+  }catch(e){ return null; }
+}
+function getLastSyncStr(){
+  const s=getSettings();
+  if(!s.lastSync) return null;
+  const d=new Date(s.lastSync);
+  return d.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit",year:"numeric"})
+    +" às "+d.toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});
+}
+function updateSyncStatusBar(state, msg){
+  const dot=document.getElementById("ss-dot");
+  const txt=document.getElementById("ss-text");
+  if(!dot||!txt) return;
+  dot.className="ss-dot "+({ok:"ok",warn:"warn",err:"err",spin:"spin"}[state]||"warn");
+  txt.textContent=msg;
+}
+
+// ── SETTINGS MODAL ────────────────────────────────────────────────────────────
+function openSettings(){
+  const s=getSettings();
+  const srcType=s.srcType||"list";
+  document.getElementById("src-type-list").checked=(srcType==="list");
+  document.getElementById("src-type-excel").checked=(srcType==="excel");
+  document.getElementById("cfg-list-url").value=s.listUrl||"https://jappt.sharepoint.com/sites/coordenacao_armazens_JAPparts/Lists/Armazns_Grupo_JAP/AllItems.aspx";
+  document.getElementById("cfg-excel-url").value=s.excelUrl||"";
+  document.getElementById("cfg-auto-sync").checked=s.autoSync!==false;
+  document.getElementById("cfg-save-local").checked=s.saveLocal!==false;
+  onSrcTypeChange();
+  const ls=getLastSyncStr();
+  document.getElementById("cfg-last-sync-info").innerHTML=ls
+    ? `<strong>Último sync:</strong> ${ls} &nbsp;·&nbsp; <strong>Registos guardados:</strong> ${DB.length}`
+    : "Sem dados guardados localmente ainda.";
+  document.getElementById("settings-modal-overlay").classList.add("open");
+}
+function closeSettings(){ document.getElementById("settings-modal-overlay").classList.remove("open"); }
+function onSrcTypeChange(){
+  const isList=document.getElementById("src-type-list").checked;
+  document.getElementById("cfg-list-section").style.display=isList?"block":"none";
+  document.getElementById("cfg-excel-section").style.display=isList?"none":"block";
+}
+function saveSettings(){
+  const s=getSettings();
+  s.srcType=document.getElementById("src-type-list").checked?"list":"excel";
+  s.listUrl=document.getElementById("cfg-list-url").value.trim();
+  s.excelUrl=document.getElementById("cfg-excel-url").value.trim();
+  s.autoSync=document.getElementById("cfg-auto-sync").checked;
+  s.saveLocal=document.getElementById("cfg-save-local").checked;
+  saveSettingsObj(s);
+  closeSettings();
+  initSpoPanel(); // actualizar painel SPO com novos URLs
+  showToast("✓ Configurações guardadas");
+}
+function clearLocalData(){
+  if(!confirm("Apagar todos os dados guardados localmente? Os dados actuais na app ficam disponíveis até fechar.")) return;
+  try{ localStorage.removeItem(LS_KEY_DB); localStorage.removeItem(LS_KEY_META); }catch(e){}
+  document.getElementById("cfg-last-sync-info").textContent="Dados locais apagados.";
+  showToast("🗑️ Dados locais removidos","#742a2a");
+}
+async function testListConnection(){
+  const url=document.getElementById("cfg-list-url").value.trim();
+  const res=document.getElementById("test-list-result");
+  const btn=document.getElementById("test-list-btn");
+  if(!url){ res.textContent="⚠️ Insira um URL primeiro"; return; }
+  btn.textContent="⏳ A testar…"; btn.disabled=true; res.textContent="";
+  try{
+    const api=buildListApiUrl(url);
+    const r=await fetch(api+"&$top=1",{headers:{"Accept":"application/json;odata=verbose"},credentials:"include"});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const j=await r.json();
+    const count=j.d&&j.d.results?j.d.results.length:0;
+    res.style.color="var(--sim-c)";
+    res.textContent="✅ Ligação OK — lista acessível";
+  }catch(e){
+    res.style.color="var(--nao-c)";
+    res.textContent="❌ Falhou: "+e.message+" (verifique se está autenticado no SharePoint)";
+  } finally { btn.textContent="🔌 Testar ligação"; btn.disabled=false; }
+}
+
+// ── SHAREPOINT LIST REST API ──────────────────────────────────────────────────
+function buildListApiUrl(pageUrl){
+  // Extrai site + nome de lista do URL da página AllItems.aspx
+  // Ex: https://jappt.sharepoint.com/sites/SITE/Lists/LIST_NAME/AllItems.aspx
+  const u=new URL(pageUrl);
+  const parts=u.pathname.split("/");
+  const listsIdx=parts.findIndex(p=>p.toLowerCase()==="lists");
+  if(listsIdx<0) throw new Error("URL não parece ser de uma lista SharePoint (falta /Lists/ no caminho)");
+  const siteBase=u.origin+parts.slice(0,listsIdx).join("/");
+  const listName=decodeURIComponent(parts[listsIdx+1]||"");
+  if(!listName) throw new Error("Nome da lista não encontrado no URL");
+  return `${siteBase}/_api/web/lists/getbytitle('${listName}')/items?$top=5000`;
+}
+
+// Mapeamento de colunas da Lista SharePoint → chaves internas da App
+// O nome das colunas internas do SharePoint pode diferir do nome visível
+// Aceita múltiplos nomes possíveis por chave (aliases)
+const SP_LIST_COL_MAP = {
+  PV:          ["PV","Title","PV_x0020_"],
+  NOME:        ["NOME_x0020_ARMAZ_x002E__x0020_AU","Nome_Armazem","NOME","NomeArmazem"],
+  EMP:         ["EMPRESA_x0020_GRUPO_x0020_JAP","Empresa","EMP","EmpresaGrupoJAP"],
+  GESCOM:      ["MORADA_x002F_NOME_x0020_EM_x0020","NomeGescom","GESCOM"],
+  MORADA:      ["MORADA_x0020__x0026__x0020_LOCAL","Morada","MORADA"],
+  CP:          ["C_x00d3_DIGO_x0020_POSTAL_x0020__","CodigoPostal","CP"],
+  NIF:         ["NIF"],
+  ZONA:        ["ZONA","Zona"],
+  DIST:        ["DISTRITO","Distrito","DIST"],
+  CONC:        ["CONCELHO","Concelho","CONC"],
+  STIE:        ["Serve_x0020_TIE","ServeTIE","STIE","Serve_TIE"],
+  ETIE:        ["Efetua_x0020_TIE","EfetuaTIE","ETIE","Efetua_TIE"],
+  ALIAS:       ["Nome_x0020_ALIAS_x0020_Email","NomeALIAS","ALIAS"],
+  EMAIL:       ["EMAIL_x0020_ARMAZ_x00c9_M","EmailArmazem","EMAIL"],
+  CONT_EXT:    ["Contacto_x0020_Armz_x0020__x002","ContactoExt","CONT_EXT"],
+  RESP:        ["Respons_x00e1_vel_x0020_de_x0020","Responsavel","RESP"],
+  EMAIL_RESP:  ["E_x002d_mail","EmailResp","EMAIL_RESP","E-mail"],
+  CONT:        ["Contacto","CONT"],
+  TIPO:        ["Tipo_x0020_Armaz_x00e9_m","TipoArmazem","TIPO"],
+  M1:          ["Marca1","M1"],
+  M2:          ["Marca2","M2"],
+  M3:          ["Marca3","M3"],
+  M4:          ["Marca4","M4"],
+  M5:          ["Marca5","M5"],
+  M6:          ["Marca6","M6"],
+  M7:          ["Marca7","M7"],
+  M8:          ["Marca8","M8"],
+  M9:          ["Marca9","M9"],
+  CA:          ["Coordenador_x0020_Armaz_x00e9_m_","CoordCA","CA"],
+  CONT_CA:     ["Contacto_x0020_CA","ContactoCA","CONT_CA"],
+  EMAIL_CA:    ["e_x002d_mail_x0020_CA","EmailCA","EMAIL_CA","e-mail CA"],
+  COL:         ["Colis_x00e3_o","Colisao","COL"],
+  RC:          ["Respons_x00e1_vel_x0020_Colis_x00","RespColisao","RC"],
+  EMAIL_RC:    ["e_x002d_mail_x0020_RC","EmailRC","EMAIL_RC"],
+  CONT_RC:     ["Contacto_x0020_RC","ContactoRC","CONT_RC"],
+  MEC:         ["Mec_x00e2_nica","Mecanica","MEC"],
+  RM:          ["Respons_x00e1_vel_x0020_Mec_x00e2","RespMecanica","RM"],
+  EMAIL_RM:    ["e_x002d_mail_x0020_RM","EmailRM","EMAIL_RM"],
+  CONT_RM:     ["Contacto_x0020_RM","ContactoRM","CONT_RM"],
+  BAL:         ["Balc_x00e3_o_x0020_de_x0020_Pe_x","BalcaoPecas","BAL"],
+  PNEUS:       ["M_x00e1_quina_x0020_Mont_x002e_Pn","MaqPneus","PNEUS"],
+  EMP_EQ:      ["Empilhador","EMP_EQ"],
+  PP:          ["Porta_x0020_Paletes","PortaPaletes","PP"],
+  STACK:       ["Stacker_x0020_c_x002f_Eleva_x00e7","Stacker","STACK"],
+  OUTROS:      ["OUTROS_x0020_PV_x0020_MESMO_x002","OutrosPV","OUTROS"],
+};
+
+function mapSpListRow(row){
+  const def={PV:"",NOME:"",EMP:"",GESCOM:"",MORADA:"",CP:"",NIF:"",ZONA:"",DIST:"",CONC:"",
+    STIE:"",ETIE:"",ALIAS:"",EMAIL:"",CONT_EXT:"",RESP:"",EMAIL_RESP:"",CONT:"",TIPO:"",
+    M1:"",M2:"",M3:"",M4:"",M5:"",M6:"",M7:"",M8:"",M9:"",
+    CA:"",CONT_CA:"",EMAIL_CA:"",COL:"",RC:"",EMAIL_RC:"",CONT_RC:"",
+    MEC:"",RM:"",EMAIL_RM:"",CONT_RM:"",BAL:"",PNEUS:"",EMP_EQ:"",PP:"",STACK:"",OUTROS:""};
+  Object.entries(SP_LIST_COL_MAP).forEach(([key,aliases])=>{
+    for(const alias of aliases){
+      if(row[alias]!==undefined&&row[alias]!==null){
+        def[key]=String(row[alias]).trim().replace(/\.0$/, "");
+        break;
+      }
+    }
+  });
+  return def;
+}
+
+async function fetchFromList(listUrl){
+  const apiUrl=buildListApiUrl(listUrl);
+  updateSyncStatusBar("spin","A ligar à lista SharePoint…");
+  const resp=await fetch(apiUrl,{headers:{"Accept":"application/json;odata=verbose"},credentials:"include"});
+  if(!resp.ok) throw new Error("HTTP "+resp.status+" — verifique autenticação no SharePoint");
+  const json=await resp.json();
+  const rows=(json.d&&json.d.results)||[];
+  if(!rows.length) throw new Error("Lista vazia ou sem registos");
+  const newDB=rows.map(r=>mapSpListRow(r)).filter(r=>r.PV);
+  if(!newDB.length) throw new Error("Nenhum registo com PV encontrado. Verifique os nomes das colunas da lista.");
+  return {data:newDB, source:"Lista SharePoint"};
+}
+
+async function fetchFromExcel(excelUrl){
+  // Try multiple URL formats
+  const urls=[
+    excelUrl+"?download=1",
+    excelUrl+"&download=1",
+    excelUrl,
+  ];
+  updateSyncStatusBar("spin","A descarregar Excel do SharePoint…");
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{mode:"cors",credentials:"include"});
+      if(r.ok){
+        const buf=await r.arrayBuffer();
+        if(buf.byteLength>2000){
+          const wb=XLSX.read(buf,{type:"array"});
+          const sn=wb.SheetNames.includes("BD_Armazens")?"BD_Armazens":wb.SheetNames[0];
+          const ws=wb.Sheets[sn];
+          const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+          if(!rows.length) throw new Error("Folha vazia");
+          const newDB=rows.map(row=>{
+            const rec={PV:"",NOME:"",EMP:"",GESCOM:"",MORADA:"",CP:"",NIF:"",ZONA:"",DIST:"",CONC:"",
+              STIE:"",ETIE:"",ALIAS:"",EMAIL:"",CONT_EXT:"",RESP:"",EMAIL_RESP:"",CONT:"",TIPO:"",
+              M1:"",M2:"",M3:"",M4:"",M5:"",M6:"",M7:"",M8:"",M9:"",
+              CA:"",CONT_CA:"",EMAIL_CA:"",COL:"",RC:"",EMAIL_RC:"",CONT_RC:"",
+              MEC:"",RM:"",EMAIL_RM:"",CONT_RM:"",BAL:"",PNEUS:"",EMP_EQ:"",PP:"",STACK:"",OUTROS:""};
+            Object.entries(COL_MAP).forEach(([ec,dk])=>{ rec[dk]=String(row[ec]||"").trim().replace(/\.0$/,""); });
+            return rec;
+          }).filter(r=>r.PV);
+          if(!newDB.length) throw new Error("Nenhum PV válido no Excel");
+          return {data:newDB, source:"Excel SharePoint ("+sn+")"};
+        }
+      }
+    }catch(e){ if(urls.indexOf(u)===urls.length-1) throw e; }
+  }
+  throw new Error("Não foi possível descarregar o Excel");
+}
+
+// ── SYNC UNIFICADO — 3 ESTRATÉGIAS EM CASCATA, SILENCIOSO ───────────────────
+// 1. Lista SharePoint REST API (rápido, dados estruturados)
+// 2. Excel via fetch direto com credentials (session cookie do browser)
+// 3. Excel via iframe oculto que usa a sessão activa do browser (sem CORS explícito)
+// Sem intervenção do utilizador — tudo automático. Só mostra erro se as 3 falharem.
+async function syncTudo(){
+  const s=getSettings();
+  const listUrl=s.listUrl||"https://jappt.sharepoint.com/sites/coordenacao_armazens_JAPparts/Lists/Armazns_Grupo_JAP/AllItems.aspx";
+  const excelUrl=s.excelUrl||SPO_FALLBACK_URL;
+
+  // Bloquear todos os botões de sync
+  const allSyncBtns=[...document.querySelectorAll(".sync-btn, #ss-sync-btn")];
+  const origLabels=allSyncBtns.map(b=>b.innerHTML);
+  allSyncBtns.forEach(b=>{ b.innerHTML="⏳…"; b.classList.add("loading"); b.disabled=true; });
+  const restore=()=>allSyncBtns.forEach((b,i)=>{ b.innerHTML=origLabels[i]; b.classList.remove("loading"); b.disabled=false; });
+
+  // ── Estratégia 1: Lista SharePoint REST API ──────────────────────────────
+  updateSyncStatusBar("spin","A ligar à lista SharePoint…");
+  try{
+    const result=await fetchFromList(listUrl);
+    aplicarDados(result);
+    restore();
+    return;
+  }catch(e1){
+    console.info("[JAP] Estratégia 1 (Lista) falhou:",e1.message);
+  }
+
+  // ── Estratégia 2: Excel via fetch com credentials ────────────────────────
+  updateSyncStatusBar("spin","Lista inacessível — a tentar Excel directo…");
+  try{
+    const result=await fetchFromExcel(excelUrl);
+    result.source="Excel SPO (directo)";
+    aplicarDados(result);
+    restore();
+    return;
+  }catch(e2){
+    console.info("[JAP] Estratégia 2 (Excel fetch) falhou:",e2.message);
+  }
+
+  // ── Estratégia 3: Excel via blob URL usando sessão do browser (iframe) ───
+  updateSyncStatusBar("spin","A tentar via sessão do browser…");
+  try{
+    const result=await fetchExcelViaSessao(excelUrl);
+    result.source="Excel SPO (via sessão browser)";
+    aplicarDados(result);
+    restore();
+    return;
+  }catch(e3){
+    console.info("[JAP] Estratégia 3 (sessão browser) falhou:",e3.message);
+  }
+
+  // ── Todas falharam ───────────────────────────────────────────────────────
+  restore();
+  const ls=getLastSyncStr();
+  updateSyncStatusBar("warn","Sem acesso ao SharePoint. "+(ls?"Dados de: "+ls:"Usar importação manual"));
+  const corsWarn=document.getElementById("spo-cors-warn");
+  if(corsWarn){
+    corsWarn.style.display="block";
+    corsWarn.innerHTML=`⚠️ <strong>Sem acesso automático ao SharePoint</strong> — As 3 estratégias falharam (CORS/rede).<br>
+      Usa <strong>⬇️ Download Excel SPO</strong> ou <strong>📥 Importar Excel Local</strong> para actualizar manualmente.`;
+  }
+  const panel=document.getElementById("spo-panel");
+  if(panel) panel.style.display="block";
+  showToast("⚠️ Sem acesso ao SPO — usa Download Excel SPO ou Importar Excel Local","#742a2a");
+}
+
+// Aplica dados ao DB e actualiza a UI
+function aplicarDados(result){
+  DB=result.data;
+  saveDBLocal(DB);
+  rebuildFilters();
+  buildPvTableHeader();
+  closeAllPvDetails("");
+  renderBD(); renderPesquisa();
+  const ls=getLastSyncStr();
+  updateSyncStatusBar("ok","Actualizado: "+ls+" — "+DB.length+" registos ("+result.source+")");
+  showToast("✓ "+result.source+" — "+DB.length+" registos actualizados");
+  // Esconder painel de erro se estava visível
+  const corsWarn=document.getElementById("spo-cors-warn");
+  if(corsWarn) corsWarn.style.display="none";
+}
+
+// Estratégia 3: tenta fazer fetch ao Excel usando URL de download directo
+// O browser já tem a sessão SPO activa — o fetch no-cors permite o download
+// mas não expõe o conteúdo via JS. Usamos um trick: service worker blob ou
+// a variante mais simples: fetch com mode:"no-cors" para "aquecer" a sessão
+// e depois fetch com credentials para ler o conteúdo.
+async function fetchExcelViaSessao(excelUrl){
+  // Tentar primeiro aquecimento da sessão com no-cors (não lê resposta, só activa cookies)
+  const urlsDownload=[
+    excelUrl.replace("?web=1","")+"&download=1",
+    excelUrl+"?download=1",
+    excelUrl,
+  ];
+  // Variante A: fetch com no-cors para activar sessão, depois fetch cors com credentials
+  try{
+    await fetch(excelUrl,{mode:"no-cors",credentials:"include"});
+  }catch(e){}
+  // Aguardar brevemente para a sessão propagar
+  await new Promise(r=>setTimeout(r,800));
+  // Agora tentar fetch com cors + credentials
+  for(const u of urlsDownload){
+    try{
+      const r=await fetch(u,{mode:"cors",credentials:"include",cache:"no-cache"});
+      if(!r.ok) continue;
+      const buf=await r.arrayBuffer();
+      if(buf.byteLength<2000) continue;
+      const wb=XLSX.read(buf,{type:"array"});
+      const sn=wb.SheetNames.includes("BD_Armazens")?"BD_Armazens":wb.SheetNames[0];
+      const ws=wb.Sheets[sn];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+      if(!rows.length) throw new Error("Folha vazia");
+      const newDB=rows.map(row=>{
+        const rec={PV:"",NOME:"",EMP:"",GESCOM:"",MORADA:"",CP:"",NIF:"",ZONA:"",DIST:"",CONC:"",
+          STIE:"",ETIE:"",ALIAS:"",EMAIL:"",CONT_EXT:"",RESP:"",EMAIL_RESP:"",CONT:"",TIPO:"",
+          M1:"",M2:"",M3:"",M4:"",M5:"",M6:"",M7:"",M8:"",M9:"",
+          CA:"",CONT_CA:"",EMAIL_CA:"",COL:"",RC:"",EMAIL_RC:"",CONT_RC:"",
+          MEC:"",RM:"",EMAIL_RM:"",CONT_RM:"",BAL:"",PNEUS:"",EMP_EQ:"",PP:"",STACK:"",OUTROS:""};
+        Object.entries(COL_MAP).forEach(([ec,dk])=>{ rec[dk]=String(row[ec]||"").trim().replace(/\.0$/,""); });
+        return rec;
+      }).filter(r=>r.PV);
+      if(!newDB.length) throw new Error("Nenhum PV válido");
+      return {data:newDB, source:"Excel SPO (sessão browser)"};
+    }catch(e){ continue; }
+  }
+  throw new Error("Estratégia 3 esgotada");
+}
+
+// Manter syncSharePoint como alias para compatibilidade
+function syncSharePoint(){ return syncTudo(); }
+
+// Fallback Excel URL se configuração não tiver URL
+const SPO_FALLBACK_URL="https://jappt.sharepoint.com/sites/coordenacao_armazens_JAPparts/Documentos%20Partilhados/Armaz%C3%A9ns_Grupo_JAP/Armaz%C3%A9ns_Grupo_JAP.xlsx";
+
+// ── PAINEL SPO — LINKS EDITÁVEIS INLINE ──────────────────────────────────────
+function initSpoPanel(){
+  const s=getSettings();
+  const srcType=s.srcType||"list";
+  const listUrl=s.listUrl||"https://jappt.sharepoint.com/sites/coordenacao_armazens_JAPparts/Lists/Armazns_Grupo_JAP/AllItems.aspx";
+  const excelUrl=s.excelUrl||SPO_FALLBACK_URL;
+
+  // Actualizar label tipo activo
+  const lbl=document.getElementById("spo-active-type");
+  if(lbl) lbl.textContent=srcType==="list"?"📋 Lista SharePoint":"📊 Ficheiro Excel";
+
+  // Mostrar/ocultar secções conforme tipo
+  const listSec=document.getElementById("spo-list-section");
+  const excelSec=document.getElementById("spo-excel-section");
+  if(listSec) listSec.style.display=srcType==="list"?"block":"none";
+  if(excelSec) excelSec.style.display="block"; // mostrar sempre para edição
+
+  // Preencher campos inline
+  const liInp=document.getElementById("spo-list-url-inline");
+  if(liInp) liInp.value=listUrl;
+  const exInp=document.getElementById("spo-excel-url-inline");
+  if(exInp) exInp.value=excelUrl;
+
+  // Actualizar href dos botões "Abrir"
+  const listBtn=document.getElementById("spo-list-open-btn");
+  if(listBtn) listBtn.href=listUrl;
+  const excelBtn=document.getElementById("spo-excel-open-btn");
+  if(excelBtn) excelBtn.href=excelUrl;
+}
+
+function spoSaveListUrl(){
+  const inp=document.getElementById("spo-list-url-inline");
+  if(!inp||!inp.value.trim()){showToast("⚠️ Insira um URL válido","#742a2a");return;}
+  const s=getSettings();
+  s.listUrl=inp.value.trim();
+  saveSettingsObj(s);
+  const btn=document.getElementById("spo-list-open-btn");
+  if(btn) btn.href=s.listUrl;
+  // Sincronizar também com o modal de configurações se estiver aberto
+  const cfgInp=document.getElementById("cfg-list-url");
+  if(cfgInp) cfgInp.value=s.listUrl;
+  showToast("✓ URL da lista guardado");
+}
+
+function spoSaveExcelUrl(){
+  const inp=document.getElementById("spo-excel-url-inline");
+  if(!inp||!inp.value.trim()){showToast("⚠️ Insira um URL válido","#742a2a");return;}
+  const s=getSettings();
+  s.excelUrl=inp.value.trim();
+  saveSettingsObj(s);
+  const btn=document.getElementById("spo-excel-open-btn");
+  if(btn) btn.href=s.excelUrl;
+  const cfgInp=document.getElementById("cfg-excel-url");
+  if(cfgInp) cfgInp.value=s.excelUrl;
+  showToast("✓ URL do Excel guardado");
+}
+
+// ── DOWNLOAD EXCEL DO SHAREPOINT ──────────────────────────────────────────────
+async function downloadFromSharePoint(){
+  const s=getSettings();
+  const excelUrl=s.excelUrl||SPO_FALLBACK_URL;
+  showToast("⏳ A tentar descarregar Excel do SharePoint…");
+  try{
+    // Tentar descarregar via fetch com credenciais
+    const urls=[excelUrl+"?download=1", excelUrl+"&download=1", excelUrl];
+    let downloaded=false;
+    for(const u of urls){
+      try{
+        const r=await fetch(u,{mode:"cors",credentials:"include"});
+        if(r.ok){
+          const buf=await r.arrayBuffer();
+          if(buf.byteLength>2000){
+            const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+            const a=document.createElement("a");
+            a.href=URL.createObjectURL(blob);
+            a.download="Armazens_Grupo_JAP_download.xlsx";
+            a.click();
+            showToast("✓ Excel descarregado com sucesso");
+            downloaded=true;
+            break;
+          }
+        }
+      }catch(e){ continue; }
+    }
+    if(!downloaded){
+      // Fallback: abrir URL directamente no browser
+      showToast("⚠️ Não foi possível via fetch — a abrir no browser…","#744210");
+      window.open(excelUrl,"_blank");
+    }
+  }catch(e){
+    showToast("⚠️ Erro ao descarregar: "+e.message,"#742a2a");
+    window.open(excelUrl,"_blank");
+  }
+}
+
+// ── EXPORTAR DADOS ACTUAIS PARA EXCEL LOCAL ────────────────────────────────────
+// ── DOWNLOAD EXCEL SPO + IMPORTAR AUTOMATICAMENTE ────────────────────────────
+// Tenta descarregar o Excel do SharePoint e importar directamente na app.
+// Se fetch funcionar (autenticado no SPO): importa automático sem intervenção.
+// Se CORS/auth bloquear: descarrega o ficheiro e abre o seletor para o user importar.
+async function downloadAndImportExcel(){
+  const s=getSettings();
+  const excelUrl=s.excelUrl||SPO_FALLBACK_URL;
+  const btns=[...document.querySelectorAll("[onclick*='downloadAndImportExcel']")];
+  btns.forEach(b=>{ b.dataset.orig=b.innerHTML; b.innerHTML="⏳ A descarregar…"; b.disabled=true; });
+  const restore=()=>btns.forEach(b=>{ b.innerHTML=b.dataset.orig||"⬇️ Download Excel SPO"; b.disabled=false; });
+
+  updateSyncStatusBar("spin","A descarregar Excel do SharePoint…");
+  const urls=[excelUrl+"?download=1", excelUrl+"&download=1", excelUrl];
+  let downloaded=false;
+
+  for(const u of urls){
+    try{
+      const r=await fetch(u,{mode:"cors",credentials:"include"});
+      if(!r.ok) continue;
+      const buf=await r.arrayBuffer();
+      if(buf.byteLength<2000) continue;
+
+      // Tentar importar directamente (mesmo código do importExcel mas a partir de ArrayBuffer)
+      try{
+        const wb=XLSX.read(buf,{type:"array"});
+        const sheetName=wb.SheetNames.includes("BD_Armazens")?"BD_Armazens":wb.SheetNames[0];
+        const ws=wb.Sheets[sheetName];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+        if(!rows||rows.length===0) throw new Error("Folha vazia");
+        const newDB=rows.map(row=>{
+          const rec={};
+          Object.entries(COL_MAP).forEach(([excelCol,dbKey])=>{ rec[dbKey]=String(row[excelCol]||"").trim().replace(/\.0$/,""); });
+          const defaults={PV:"",NOME:"",EMP:"",GESCOM:"",MORADA:"",CP:"",NIF:"",ZONA:"",DIST:"",CONC:"",
+            STIE:"",ETIE:"",ALIAS:"",EMAIL:"",CONT_EXT:"",RESP:"",EMAIL_RESP:"",CONT:"",TIPO:"",
+            M1:"",M2:"",M3:"",M4:"",M5:"",M6:"",M7:"",M8:"",M9:"",
+            CA:"",CONT_CA:"",EMAIL_CA:"",COL:"",RC:"",EMAIL_RC:"",CONT_RC:"",
+            MEC:"",RM:"",EMAIL_RM:"",CONT_RM:"",BAL:"",PNEUS:"",EMP_EQ:"",PP:"",STACK:"",OUTROS:""};
+          return Object.assign(defaults,rec);
+        }).filter(r=>r.PV);
+        if(!newDB.length) throw new Error("Nenhum PV válido");
+        DB=newDB;
+        saveDBLocal(DB);
+        rebuildFilters();
+        buildPvTableHeader();
+        renderBD(); renderPesquisa();
+        const ls=getLastSyncStr();
+        updateSyncStatusBar("ok",`Actualizado via Excel SPO: ${ls} — ${DB.length} registos`);
+        showToast(`✓ ${DB.length} registos importados do Excel SharePoint (${sheetName})`);
+        downloaded=true;
+      }catch(parseErr){
+        // Ficheiro descarregado mas falhou parse — guardar para o user importar manualmente
+        const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+        const a=document.createElement("a");
+        a.href=URL.createObjectURL(blob);
+        a.download="Armazens_Grupo_JAP.xlsx";
+        a.click();
+        updateSyncStatusBar("warn","Excel descarregado — importa o ficheiro manualmente");
+        showToast("⚠️ Ficheiro descarregado — selecciona-o para importar","#744210");
+        setTimeout(()=>document.getElementById("hidden-file-pv").click(),600);
+        downloaded=true;
+      }
+      break;
+    }catch(e){ continue; }
+  }
+
+  if(!downloaded){
+    // Fetch bloqueado por CORS/auth — descarregar via link e pedir importação manual
+    updateSyncStatusBar("warn","Sem acesso directo ao SPO — usa Importar Excel Local após download");
+    showToast("⚠️ Sem acesso ao SPO. A abrir ficheiro no browser — descarrega e importa manualmente","#742a2a");
+    // Tentar abrir URL directamente para o browser forçar download
+    window.open(excelUrl,"_blank");
+    setTimeout(()=>{
+      showToast("📥 Após descarregar, clica em 'Importar Excel Local'","#2b6cb0");
+    },2000);
+  }
+  restore();
+}
+
+function exportLocalToExcel(){
+  if(!DB||DB.length===0){showToast("⚠️ Sem dados para exportar","#742a2a");return;}
+  try{
+    // Construir array de linhas para o Excel
+    const headers=["PV","NOME","EMP","GESCOM","MORADA","CP","NIF","ZONA","DIST","CONC",
+      "STIE","ETIE","ALIAS","EMAIL","CONT_EXT","RESP","EMAIL_RESP","CONT","TIPO",
+      "M1","M2","M3","M4","M5","M6","M7","M8","M9",
+      "CA","CONT_CA","EMAIL_CA","COL","RC","EMAIL_RC","CONT_RC",
+      "MEC","RM","EMAIL_RM","CONT_RM","BAL","PNEUS","EMP_EQ","PP","STACK","OUTROS"];
+    // Mapear para nomes de colunas do Excel original (COL_MAP invertido)
+    const COL_MAP_INV=Object.fromEntries(Object.entries(COL_MAP).map(([k,v])=>[v,k]));
+    const excelHeaders=headers.map(h=>COL_MAP_INV[h]||h);
+    const rows=[excelHeaders, ...DB.map(r=>headers.map(h=>r[h]||""))];
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,"BD_Armazens",ws);
+    const now=new Date();
+    const stamp=now.toISOString().slice(0,10).replace(/-/g,"");
+    XLSX.writeFile(wb,`Armazens_Grupo_JAP_local_${stamp}.xlsx`);
+    showToast(`✓ Exportados ${DB.length} registos para Excel local`);
+  }catch(e){
+    showToast("⚠️ Erro ao exportar: "+e.message,"#742a2a");
+  }
+}
+
+// ── IMPORT EXCEL ─────────────────────────────────────────────────────────────
+const COL_MAP = {
+  "PV":"PV","NOME ARMAZ. AUTOLINE":"NOME","EMPRESA GRUPO JAP":"EMP",
+  "MORADA/NOME EM GESCOM":"GESCOM","MORADA & LOCALIDADE":"MORADA",
+  "CÓDIGO POSTAL & LOCALIDADE":"CP","NIF":"NIF","ZONA":"ZONA",
+  "DISTRITO":"DIST","CONCELHO":"CONC","Serve TIE":"STIE","Efetua TIE":"ETIE",
+  "Nome ALIAS Email":"ALIAS","EMAIL ARMAZÉM":"EMAIL",
+  "Contacto Armz / Extensão":"CONT_EXT","Responsável de Armazém":"RESP",
+  "E-mail":"EMAIL_RESP","Contacto":"CONT","Tipo Armazém":"TIPO",
+  "Marca1":"M1","Marca2":"M2","Marca3":"M3","Marca4":"M4","Marca5":"M5",
+  "Marca6":"M6","Marca7":"M7","Marca8":"M8","Marca9":"M9",
+  "Coordenador Armazém CA":"CA","Contacto CA":"CONT_CA","e-mail CA":"EMAIL_CA",
+  "Colisão":"COL","Responsável Colisão RC":"RC","e-mail RC":"EMAIL_RC",
+  "Contacto RC":"CONT_RC","Mecânica":"MEC","Responsável Mecânica RM":"RM",
+  "e-mail RM":"EMAIL_RM","Contacto RM":"CONT_RM",
+  "Balcão de Peças":"BAL","Máquina Mont.Pneus":"PNEUS",
+  "Empilhador":"EMP_EQ","Porta Paletes":"PP","Stacker c/Elevação":"STACK",
+  "OUTROS PV MESMO LOCAL":"OUTROS"
+};
+
+function importExcel(evt){
+  const file=evt.target.files[0];
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const sheetName=wb.SheetNames.includes("BD_Armazens")?"BD_Armazens":wb.SheetNames[0];
+      const ws=wb.Sheets[sheetName];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+      if(!rows||rows.length===0){showToast("⚠️ Nenhum dado encontrado no Excel","#742a2a");return;}
+      const newDB=rows.map(row=>{
+        const rec={};
+        Object.entries(COL_MAP).forEach(([excelCol,dbKey])=>{
+          rec[dbKey]=String(row[excelCol]||"").trim().replace(/\.0$/,"");
+        });
+        const defaults={PV:"",NOME:"",EMP:"",GESCOM:"",MORADA:"",CP:"",NIF:"",ZONA:"",DIST:"",CONC:"",
+          STIE:"",ETIE:"",ALIAS:"",EMAIL:"",CONT_EXT:"",RESP:"",EMAIL_RESP:"",CONT:"",TIPO:"",
+          M1:"",M2:"",M3:"",M4:"",M5:"",M6:"",M7:"",M8:"",M9:"",
+          CA:"",CONT_CA:"",EMAIL_CA:"",COL:"",RC:"",EMAIL_RC:"",CONT_RC:"",
+          MEC:"",RM:"",EMAIL_RM:"",CONT_RM:"",BAL:"",PNEUS:"",EMP_EQ:"",PP:"",STACK:"",OUTROS:""};
+        return Object.assign(defaults,rec);
+      }).filter(r=>r.PV);
+      if(newDB.length===0){showToast("⚠️ Nenhum PV válido encontrado","#742a2a");return;}
+      DB=newDB;
+      saveDBLocal(DB);  // guardar localmente para uso offline
+      rebuildFilters();
+      buildPvTableHeader();
+      renderBD(); renderPesquisa();
+      const ls=getLastSyncStr();
+      updateSyncStatusBar("ok",`Importado manualmente: ${ls} — ${DB.length} registos`);
+      showToast(`✓ Importados ${DB.length} registos da folha "${sheetName}" — guardado localmente`);
+    }catch(err){
+      showToast("⚠️ Erro ao ler Excel: "+err.message,"#742a2a");
+    }
+    evt.target.value="";
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ── START ─────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>
